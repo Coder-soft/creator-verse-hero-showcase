@@ -12,7 +12,7 @@ export function HeroSection() {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero pt-24">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
@@ -43,7 +43,7 @@ export function HeroSection() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 animate-fade-in delay-400">
+          <div className="flex justify-center items-center mb-16 animate-fade-in delay-400">
             <Button 
               size="lg" 
               className="text-lg px-8 py-6 bg-gradient-primary shadow-glow-primary animate-glow-pulse group"
@@ -51,38 +51,6 @@ export function HeroSection() {
               Start Creating
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8 py-6 border-primary/50 hover:bg-primary/10"
-            >
-              View Portfolio
-            </Button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-2xl mx-auto animate-fade-in delay-600">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-6 w-6 text-primary mr-2" />
-                <span className="text-3xl font-bold text-foreground">1000+</span>
-              </div>
-              <p className="text-muted-foreground">Happy Creators</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Zap className="h-6 w-6 text-primary mr-2" />
-                <span className="text-3xl font-bold text-foreground">5000+</span>
-              </div>
-              <p className="text-muted-foreground">Projects Delivered</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Sparkles className="h-6 w-6 text-primary mr-2" />
-                <span className="text-3xl font-bold text-foreground">24/7</span>
-              </div>
-              <p className="text-muted-foreground">Support Available</p>
-            </div>
           </div>
         </div>
       </div>
