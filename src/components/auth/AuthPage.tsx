@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Github, Mail } from 'lucide-react';
+import { Github } from 'lucide-react';
 
 export default function AuthPage() {
   const { user } = useAuth();
@@ -55,7 +55,7 @@ export default function AuthPage() {
     }
   };
 
-  const handleSocialAuth = async (provider: 'google' | 'github' | 'discord') => {
+  const handleSocialAuth = async (provider: 'github' | 'discord') => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -161,14 +161,7 @@ export default function AuthPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => handleSocialAuth('google')}
-                disabled={loading}
-              >
-                <Mail className="h-4 w-4" />
-              </Button>
+            <div className="grid grid-cols-2 gap-3 mt-4">
               <Button
                 variant="outline"
                 onClick={() => handleSocialAuth('github')}
