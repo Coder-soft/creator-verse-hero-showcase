@@ -1,6 +1,6 @@
-# Gemini Project Brief: crimson-okapi-hug
+# Gemini Project Brief: Creators Market
 
-This document provides a high-level overview of the `crimson-okapi-hug` project, its technology stack, and conventions to guide development.
+This document provides a high-level overview of the `Creators Market` project, its technology stack, and conventions to guide development.
 
 ## Project Overview
 
