@@ -1,34 +1,35 @@
-@keyframes shiny-loop {
+.shiny-text {
+  color: hsl(var(--muted-foreground));
+  display: inline-block;
+  transition: color .3s ease;
+}
+
+.shiny-text:hover {
+  color: #b5b5b5a4;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shine 5s linear infinite;
+}
+
+@keyframes shine {
   0% {
-    transform: translateX(-100%);
+    background-position: 100%;
   }
   100% {
-    transform: translateX(100%);
+    background-position: -100%;
   }
 }
 
-.shiny-text {
-  position: relative;
-  overflow: hidden;
-  display: inline-block;
-}
-
-.shiny-text::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 150%;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(255, 255, 255, 0.8) 50%,
-    transparent 100%
-  );
-  transform: translateX(-100%);
-}
-
-.shiny-text:hover::before {
-  animation: shiny-loop 1.5s infinite linear;
+.shiny-text.disabled,
+.shiny-text.disabled:hover {
+  color: hsl(var(--muted-foreground));
+  background: none;
+  animation: none;
 }

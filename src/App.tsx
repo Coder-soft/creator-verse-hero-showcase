@@ -15,8 +15,9 @@ import FreelancerPostsManager from "./pages/FreelancerPostsManager";
 import PostDetails from "./pages/PostDetails";
 import DbSetup from "./pages/DbSetup";
 import Messaging from "./pages/Messaging";
-import Footer from "./components/ui/footer";
+import { Footer } from "./components/ui/footer";
 import AuthGuard from "./components/auth/AuthGuard";
+import "./shiny-text.css";
 
 const queryClient = new QueryClient();
 

@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center gap-2">
             <LayoutGrid className="h-6 w-6" />
-            <span className="text-lg font-bold">Creators Market</span>
+            <span className="text-lg font-bold shiny-text">Renderdragon</span>
           </div>
           <p className="text-sm text-muted-foreground mt-4 md:mt-0">
             © {new Date().getFullYear()} All rights reserved.
