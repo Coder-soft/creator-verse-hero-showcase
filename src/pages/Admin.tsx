@@ -22,8 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose
-} from '@/components/ui/simple-dialog';
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, UserCog, Eye, Loader2, PencilLine, Trash2, MessageCircle, Link as LinkIcon } from 'lucide-react';
@@ -88,7 +87,9 @@ export default function AdminPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   
   const [selectedApplication, setSelectedApplication] = useState<FreelancerApplication | null>(null);
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [newQuestion, setNewQuestion] = useState({ question: '', required: true, type: 'text' as 'text' | 'file' });
 
   useEffect(() => {
@@ -170,6 +171,7 @@ export default function AdminPage() {
       await supabase.from('profiles').update({ account_status: status === 'approved' ? 'active' : 'rejected' }).eq('user_id', userId);
       setApplications(applications.map(app => app.id === applicationId ? { ...app, status } : app));
       toast({ title: `Application ${status}`, description: `The freelancer application has been ${status}.` });
+      setIsReviewDialogOpen(false);
     } catch (error) {
       toast({ title: 'Error', description: `Failed to ${status} application`, variant: 'destructive' });
     } finally {
@@ -197,7 +199,7 @@ export default function AdminPage() {
       await supabase.from('freelancer_questions').update({ question: question.question, required: question.required, type: question.type }).eq('id', question.id);
       toast({ title: 'Question Updated', description: 'The question has been successfully updated.' });
       setQuestions(questions.map(q => q.id === question.id ? question : q));
-      setSelectedQuestion(null);
+      setIsQuestionDialogOpen(false);
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to update question', variant: 'destructive' });
     } finally {
@@ -273,8 +275,8 @@ export default function AdminPage() {
                         <TableCell>{renderApplicationStatus(application.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild><Button variant="outline" size="icon" onClick={() => setSelectedApplication(application)}><Eye className="h-4 w-4" /></Button></DialogTrigger>
+                            <Dialog open={isReviewDialogOpen && selectedApplication?.id === application.id} onOpenChange={(open) => { if (!open) setSelectedApplication(null); setIsReviewDialogOpen(open); }}>
+                              <DialogTrigger asChild><Button variant="outline" size="icon" onClick={() => { setSelectedApplication(application); setIsReviewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button></DialogTrigger>
                               <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                                 <DialogHeader><DialogTitle>Application Details</DialogTitle><DialogDescription>Review the freelancer application</DialogDescription></DialogHeader>
                                 {selectedApplication && <div className="space-y-6 py-4">
@@ -302,7 +304,7 @@ export default function AdminPage() {
                                     <Button variant="destructive" disabled={processing} onClick={() => handleApplicationAction(selectedApplication.id, 'rejected', selectedApplication.user.id)}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}Reject</Button>
                                     <Button variant="default" disabled={processing} onClick={() => handleApplicationAction(selectedApplication.id, 'approved', selectedApplication.user.id)}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}Approve</Button>
                                   </>}
-                                  <DialogClose asChild><Button variant="outline">Close</Button></DialogClose>
+                                  <Button variant="outline" onClick={() => setIsReviewDialogOpen(false)}>Close</Button>
                                 </DialogFooter>
                               </DialogContent>
                             </Dialog>
@@ -345,7 +347,24 @@ export default function AdminPage() {
               </Card>
               <div className="rounded-md border">
                 <Table><TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Question</TableHead><TableHead>Type</TableHead><TableHead>Required</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
-                  {questions.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No questions found</TableCell></TableRow> : questions.map((question, index) => <TableRow key={question.id}><TableCell>{index + 1}</TableCell><TableCell className="font-medium">{question.question}</TableCell><TableCell><Badge variant="outline">{question.type}</Badge></TableCell><TableCell>{question.required ? 'Yes' : 'No'}</TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Dialog><DialogTrigger asChild><Button variant="outline" size="icon" onClick={() => setSelectedQuestion(question)}><PencilLine className="h-4 w-4" /></Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Edit Question</DialogTitle></DialogHeader>{selectedQuestion && <div className="py-4 space-y-4"><div className="space-y-2"><Label htmlFor="edit-question">Question Text</Label><Textarea id="edit-question" value={selectedQuestion.question} onChange={(e) => setSelectedQuestion({ ...selectedQuestion, question: e.target.value })} /></div><div className="space-y-2"><Label htmlFor="edit-question-type">Question Type</Label><select id="edit-question-type" value={selectedQuestion.type} onChange={(e) => setSelectedQuestion({ ...selectedQuestion, type: e.target.value as 'text' | 'file' })} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><option value="text">Text</option><option value="file">File Upload</option></select></div><div className="flex items-center space-x-2"><input type="checkbox" id="edit-required" checked={selectedQuestion.required} onChange={(e) => setSelectedQuestion({ ...selectedQuestion, required: e.target.checked })} /><Label htmlFor="edit-required">Required question</Label></div></div>}<DialogFooter><Button variant="outline" onClick={() => setSelectedQuestion(null)}>Cancel</Button><Button onClick={() => selectedQuestion && handleUpdateQuestion(selectedQuestion)} disabled={processing}>{processing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : 'Save Changes'}</Button></DialogFooter></DialogContent></Dialog><Button variant="destructive" size="icon" onClick={() => handleDeleteQuestion(question.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</Button></div></TableCell></TableRow>)}
+                  {questions.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No questions found</TableCell></TableRow> : questions.map((question, index) => <TableRow key={question.id}><TableCell>{index + 1}</TableCell><TableCell className="font-medium">{question.question}</TableCell><TableCell><Badge variant="outline">{question.type}</Badge></TableCell><TableCell>{question.required ? 'Yes' : 'No'}</TableCell><TableCell className="text-right"><div className="flex justify-end gap-2">
+                    <Dialog open={isQuestionDialogOpen && selectedQuestion?.id === question.id} onOpenChange={(open) => { if (!open) setSelectedQuestion(null); setIsQuestionDialogOpen(open); }}>
+                      <DialogTrigger asChild><Button variant="outline" size="icon" onClick={() => { setSelectedQuestion(question); setIsQuestionDialogOpen(true); }}><PencilLine className="h-4 w-4" /></Button></DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Edit Question</DialogTitle></DialogHeader>
+                        {selectedQuestion && <div className="py-4 space-y-4">
+                          <div className="space-y-2"><Label htmlFor="edit-question">Question Text</Label><Textarea id="edit-question" value={selectedQuestion.question} onChange={(e) => setSelectedQuestion({ ...selectedQuestion, question: e.target.value })} /></div>
+                          <div className="space-y-2"><Label htmlFor="edit-question-type">Question Type</Label><select id="edit-question-type" value={selectedQuestion.type} onChange={(e) => setSelectedQuestion({ ...selectedQuestion, type: e.target.value as 'text' | 'file' })} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><option value="text">Text</option><option value="file">File Upload</option></select></div>
+                          <div className="flex items-center space-x-2"><input type="checkbox" id="edit-required" checked={selectedQuestion.required} onChange={(e) => setSelectedQuestion({ ...selectedQuestion, required: e.target.checked })} /><Label htmlFor="edit-required">Required question</Label></div>
+                        </div>}
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setIsQuestionDialogOpen(false)}>Cancel</Button>
+                          <Button onClick={() => selectedQuestion && handleUpdateQuestion(selectedQuestion)} disabled={processing}>{processing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : 'Save Changes'}</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <Button variant="destructive" size="icon" onClick={() => handleDeleteQuestion(question.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</Button>
+                  </div></TableCell></TableRow>)}
                 </TableBody></Table>
               </div>
             </TabsContent>
