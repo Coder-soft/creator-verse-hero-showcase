@@ -185,8 +185,19 @@ export default function FreelancerApplication() {
         await supabase.from('freelancer_applications').update({ status: 'pending', updated_at: new Date().toISOString(), submitted_at: new Date().toISOString() }).eq('id', applicationId);
       }
 
-      for (const questionId in answersToSubmit) {
-        await supabase.from('freelancer_application_answers').upsert({ application_id: applicationId, question_id: questionId, answer: answersToSubmit[questionId] }, { onConflict: 'application_id,question_id' });
+      const answersToUpsert = Object.keys(answersToSubmit)
+        .map(questionId => ({
+          application_id: applicationId,
+          question_id: questionId,
+          answer: answersToSubmit[questionId]
+        }));
+
+      if (answersToUpsert.length > 0) {
+        const { error } = await supabase
+          .from('freelancer_application_answers')
+          .upsert(answersToUpsert, { onConflict: 'application_id,question_id' });
+        
+        if (error) throw error;
       }
 
       await supabase.from('profiles').update({ account_status: 'pending_approval' }).eq('user_id', user.id);
