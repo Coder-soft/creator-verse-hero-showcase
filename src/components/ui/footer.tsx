@@ -11,7 +11,7 @@ export default function Footer() {
             <span className="text-lg font-bold">Creators Market</span>
           </div>
           <p className="text-sm text-muted-foreground mt-4 md:mt-0">
-            © {new Date().getFullYear()} Creators Market. All rights reserved.
+            © {new Date().getFullYear()} All rights reserved.
           </p>
           <div className="flex gap-4 mt-4 md:mt-0">
             <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground">
