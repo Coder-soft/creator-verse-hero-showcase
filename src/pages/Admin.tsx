@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, UserCog, Eye, Loader2, PencilLine, Trash2, MessageCircle, Link as LinkIcon } from 'lucide-react';
+import { CheckCircle, XCircle, UserCog, Eye, Loader2, PencilLine, Trash2, Link as LinkIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,6 +43,12 @@ interface User {
   };
 }
 
+interface ApplicationAnswer {
+  id: string;
+  question_id: string;
+  answer: string;
+}
+
 interface FreelancerApplication {
   id: string;
   user_id: string;
@@ -51,16 +57,7 @@ interface FreelancerApplication {
   created_at: string;
   updated_at: string;
   user: User;
-  freelancer_application_answers: Array<{
-    id: string;
-    question_id: string;
-    answer: string;
-    freelancer_questions: {
-      question: string;
-      required: boolean;
-      type: 'text' | 'file';
-    } | null;
-  }>;
+  freelancer_application_answers: ApplicationAnswer[];
 }
 
 interface Question {
@@ -110,6 +107,13 @@ export default function AdminPage() {
     setLoadingQuestions(true);
 
     try {
+      // Fetch questions first
+      const { data: questionsData, error: questionsError } = await supabase.from('freelancer_questions').select('*').order('order_position', { ascending: true });
+      if (questionsError) throw questionsError;
+      setQuestions(questionsData || []);
+      setLoadingQuestions(false);
+
+      // Fetch users
       let userEmailMap = new Map<string, string>();
       if (hasServiceRoleKey()) {
         try {
@@ -138,9 +142,10 @@ export default function AdminPage() {
       setFreelancers(usersWithProfiles.filter(u => u.profile.role === 'freelancer'));
       setLoadingUsers(false);
 
+      // Fetch applications and their answers
       const { data: applicationsData, error: applicationsError } = await supabase
         .from('freelancer_applications')
-        .select(`*, freelancer_application_answers(*, freelancer_questions(*))`)
+        .select(`*, freelancer_application_answers(*)`)
         .order('submitted_at', { ascending: false });
       if (applicationsError) throw applicationsError;
 
@@ -151,11 +156,6 @@ export default function AdminPage() {
       }));
       setApplications(formattedApplications as FreelancerApplication[]);
       setLoadingApplications(false);
-
-      const { data: questionsData, error: questionsError } = await supabase.from('freelancer_questions').select('*').order('order_position', { ascending: true });
-      if (questionsError) throw questionsError;
-      setQuestions(questionsData || []);
-      setLoadingQuestions(false);
 
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -246,7 +246,9 @@ export default function AdminPage() {
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
   };
 
-  if (loadingUsers && loadingApplications && loadingQuestions) {
+  const questionsMap = new Map(questions.map(q => [q.id, q]));
+
+  if (loadingUsers || loadingApplications || loadingQuestions) {
     return <div className="container max-w-6xl mx-auto py-8 px-4 flex justify-center items-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
@@ -287,16 +289,21 @@ export default function AdminPage() {
                                     <div><h3 className="text-sm font-semibold">Status</h3><p>{renderApplicationStatus(selectedApplication.status)}</p></div>
                                   </div>
                                   <div className="border-t pt-4"><h3 className="text-lg font-medium mb-4">Application Answers</h3><div className="space-y-4">
-                                    {selectedApplication.freelancer_application_answers.map(answer => <div key={answer.id} className="border rounded-md p-4">
-                                      <h4 className="font-medium">{answer.freelancer_questions?.question}</h4>
-                                      {answer.freelancer_questions?.type === 'file' && answer.answer ? (
-                                        <a href={answer.answer} target="_blank" rel="noopener noreferrer" className="text-sm inline-flex items-center gap-2 mt-2 text-blue-600 hover:underline">
-                                          <LinkIcon className="h-4 w-4" /> View Uploaded File
-                                        </a>
-                                      ) : (
-                                        <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{answer.answer || 'No answer provided'}</p>
-                                      )}
-                                    </div>)}
+                                    {selectedApplication.freelancer_application_answers.map(answer => {
+                                      const question = questionsMap.get(answer.question_id);
+                                      return (
+                                        <div key={answer.id} className="border rounded-md p-4">
+                                          <h4 className="font-medium">{question?.question || 'Question not found'}</h4>
+                                          {question?.type === 'file' && answer.answer ? (
+                                            <a href={answer.answer} target="_blank" rel="noopener noreferrer" className="text-sm inline-flex items-center gap-2 mt-2 text-blue-600 hover:underline">
+                                              <LinkIcon className="h-4 w-4" /> View Uploaded File
+                                            </a>
+                                          ) : (
+                                            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{answer.answer || 'No answer provided'}</p>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
                                   </div></div>
                                 </div>}
                                 <DialogFooter>
