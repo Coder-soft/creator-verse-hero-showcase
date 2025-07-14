@@ -87,7 +87,7 @@ export default function FreelancerPostsManager() {
       
       if (error) throw error;
       
-      setPosts(data || []);
+      setPosts((data || []).map(post => ({...post, status: post.status as 'published' | 'draft' | 'archived'})));
     } catch (error) {
       console.error("Error loading posts:", error);
       toast({

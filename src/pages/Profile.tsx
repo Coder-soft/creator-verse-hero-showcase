@@ -218,7 +218,7 @@ const Profile = () => {
           bio: '',
           avatar_url: initialAvatarUrl,
           username: username || user.email?.split('@')[0] || '',
-          role: initialRole,
+          role: initialRole as 'admin' | 'buyer' | 'freelancer',
           account_status: initialRole === 'freelancer' ? 'pending_application' : 'active',
         })
         .select()
@@ -385,12 +385,7 @@ const Profile = () => {
       const { error } = await supabase.auth.admin.deleteUser(user.id);
       
       if (error) {
-        // If admin delete fails, try the client-side deletion
-        // Using any since the RPC function doesn't match the typed ones
-        const { error: signOutError } = await supabase.rpc(
-          'delete_user'
-        );
-        if (signOutError) throw signOutError;
+        throw error;
       }
       
       // Sign out

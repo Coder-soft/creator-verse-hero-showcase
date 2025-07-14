@@ -134,9 +134,9 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
         .from("conversations")
         .select(`
           *,
-          post:post_id (title),
-          buyer:buyer_id (profiles (username, display_name, avatar_url)),
-          freelancer:freelancer_id (profiles (username, display_name, avatar_url))
+          post:freelancer_posts!conversations_post_id_fkey (title),
+          buyer_profile:profiles!conversations_buyer_id_fkey (username, display_name, avatar_url),
+          freelancer_profile:profiles!conversations_freelancer_id_fkey (username, display_name, avatar_url)
         `)
         .eq("id", id)
         .single();
@@ -150,17 +150,17 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
       const otherUserData = isUserBuyer 
         ? {
             id: conversationData.freelancer_id,
-            displayName: conversationData.freelancer?.profiles?.display_name || 
-                        conversationData.freelancer?.profiles?.username || 
+            displayName: conversationData.freelancer_profile?.display_name || 
+                        conversationData.freelancer_profile?.username || 
                         "Freelancer",
-            avatarUrl: conversationData.freelancer?.profiles?.avatar_url
+            avatarUrl: conversationData.freelancer_profile?.avatar_url
           }
         : {
             id: conversationData.buyer_id,
-            displayName: conversationData.buyer?.profiles?.display_name || 
-                        conversationData.buyer?.profiles?.username || 
+            displayName: conversationData.buyer_profile?.display_name || 
+                        conversationData.buyer_profile?.username || 
                         "Buyer",
-            avatarUrl: conversationData.buyer?.profiles?.avatar_url
+            avatarUrl: conversationData.buyer_profile?.avatar_url
           };
       
       setOtherUser(otherUserData);
@@ -283,7 +283,7 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
     try {
       const { data, error } = await supabase
         .from("messages")
-        .select("*, profiles(username, display_name, avatar_url)")
+        .select("*, sender_profile:profiles!messages_sender_id_fkey(username, display_name, avatar_url)")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
       

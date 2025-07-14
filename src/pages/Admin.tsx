@@ -119,11 +119,12 @@ export default function AdminPage() {
              const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
              if (authError) throw authError;
              
-             // Create properly typed entries
-             const emailEntries: Array<[string, string]> = [];
-             authUsers.users.forEach(u => {
-               emailEntries.push([u.id, u.email || 'No email']);
-             });
+              // Create properly typed entries
+              const authUsersData = authUsers as { users: Array<{ id: string; email?: string | null }> };
+              const emailEntries: Array<[string, string]> = [];
+              authUsersData.users.forEach(u => {
+                emailEntries.push([u.id, u.email || 'No email']);
+              });
              userEmailMap = new Map<string, string>(emailEntries);
              console.log('Successfully fetched user emails from admin API');
            } catch (adminError) {

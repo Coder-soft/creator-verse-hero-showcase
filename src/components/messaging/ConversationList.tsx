@@ -18,19 +18,15 @@ interface Conversation {
   post?: {
     title: string;
   };
-  buyer?: {
-    profiles: {
-      username?: string;
-      display_name?: string;
-      avatar_url?: string;
-    };
+  buyer_profile?: {
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
   };
-  freelancer?: {
-    profiles: {
-      username?: string;
-      display_name?: string;
-      avatar_url?: string;
-    };
+  freelancer_profile?: {
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
   };
   unread_count?: number;
   latest_message?: {
@@ -86,9 +82,9 @@ export function ConversationList({ onSelectConversation, selectedConversationId 
         .from("conversations")
         .select(`
           *,
-          post:post_id (title),
-          buyer:buyer_id (profiles (username, display_name, avatar_url)),
-          freelancer:freelancer_id (profiles (username, display_name, avatar_url))
+          post:freelancer_posts!conversations_post_id_fkey (title),
+          buyer_profile:profiles!conversations_buyer_id_fkey (username, display_name, avatar_url),
+          freelancer_profile:profiles!conversations_freelancer_id_fkey (username, display_name, avatar_url)
         `);
       
       if (userRole === 'buyer') {
@@ -160,17 +156,17 @@ export function ConversationList({ onSelectConversation, selectedConversationId 
     
     if (isUserBuyer) {
       return {
-        displayName: conversation.freelancer?.profiles?.display_name || 
-                    conversation.freelancer?.profiles?.username || 
+        displayName: conversation.freelancer_profile?.display_name || 
+                    conversation.freelancer_profile?.username || 
                     "Freelancer",
-        avatarUrl: conversation.freelancer?.profiles?.avatar_url
+        avatarUrl: conversation.freelancer_profile?.avatar_url
       };
     } else {
       return {
-        displayName: conversation.buyer?.profiles?.display_name || 
-                    conversation.buyer?.profiles?.username || 
+        displayName: conversation.buyer_profile?.display_name || 
+                    conversation.buyer_profile?.username || 
                     "Buyer",
-        avatarUrl: conversation.buyer?.profiles?.avatar_url
+        avatarUrl: conversation.buyer_profile?.avatar_url
       };
     }
   };

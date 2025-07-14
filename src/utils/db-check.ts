@@ -26,7 +26,7 @@ export async function checkRequiredTables(): Promise<TableCheckResult[]> {
     try {
       // Try to select a single row from the table to check if it exists
       const { data, error } = await supabase
-        .from(table)
+        .from(table as any)
         .select('*')
         .limit(1);
       
@@ -68,96 +68,19 @@ export async function runRequiredMigrations(): Promise<{ success: boolean; messa
       return { success: true, message: 'All required tables exist.' };
     }
     
-    // Create tables that don't exist
-    if (missingTables.some(t => t.table === 'freelancer_questions')) {
-      // Create freelancer_questions table
-      const { error: questionsError } = await supabase.rpc('execute_sql', {
-        sql: `
-          CREATE TABLE IF NOT EXISTS freelancer_questions (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            question TEXT NOT NULL,
-            required BOOLEAN DEFAULT true,
-            order_position INTEGER NOT NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-          );
-          
-          -- Insert some default questions
-          INSERT INTO freelancer_questions (question, required, order_position)
-          VALUES 
-          ('What skills and services do you offer?', true, 1),
-          ('How many years of experience do you have in your field?', true, 2),
-          ('Describe your previous work experience and projects', true, 3),
-          ('What are your rate expectations?', true, 4),
-          ('What is your availability (hours per week)?', true, 5);
-        `
-      });
-      
-      if (questionsError) {
-        return { 
-          success: false, 
-          message: `Failed to create freelancer_questions table: ${questionsError.message}` 
-        };
-      }
-    }
+    // Log missing tables - they should be created via Supabase migrations
+    console.warn('Missing tables detected:', missingTables.map(t => t.table).join(', '));
+    console.warn('Please run the appropriate database migrations to create these tables.');
     
-    if (missingTables.some(t => t.table === 'freelancer_applications')) {
-      // Create freelancer_applications table
-      const { error: appsError } = await supabase.rpc('execute_sql', {
-        sql: `
-          CREATE TABLE IF NOT EXISTS freelancer_applications (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            user_id UUID NOT NULL,
-            status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-            submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            reviewed_at TIMESTAMP WITH TIME ZONE,
-            reviewed_by UUID,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            CONSTRAINT freelancer_applications_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
-          );
-        `
-      });
-      
-      if (appsError) {
-        return { 
-          success: false, 
-          message: `Failed to create freelancer_applications table: ${appsError.message}` 
-        };
-      }
-    }
-    
-    if (missingTables.some(t => t.table === 'freelancer_application_answers')) {
-      // Create freelancer_application_answers table
-      const { error: answersError } = await supabase.rpc('execute_sql', {
-        sql: `
-          CREATE TABLE IF NOT EXISTS freelancer_application_answers (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            application_id UUID NOT NULL,
-            question_id UUID NOT NULL,
-            answer TEXT,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            CONSTRAINT freelancer_application_answers_application_id_fkey FOREIGN KEY (application_id) REFERENCES freelancer_applications(id) ON DELETE CASCADE,
-            CONSTRAINT freelancer_application_answers_question_id_fkey FOREIGN KEY (question_id) REFERENCES freelancer_questions(id) ON DELETE CASCADE
-          );
-        `
-      });
-      
-      if (answersError) {
-        return { 
-          success: false, 
-          message: `Failed to create freelancer_application_answers table: ${answersError.message}` 
-        };
-      }
-    }
-    
-    return { success: true, message: 'Successfully created missing tables.' };
+    return { 
+      success: false, 
+      message: `Missing tables: ${missingTables.map(t => t.table).join(', ')}. Please run database migrations.` 
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return { 
       success: false, 
-      message: `An error occurred while running migrations: ${errorMessage}` 
+      message: `An error occurred while checking tables: ${errorMessage}` 
     };
   }
-} 
+}
