@@ -55,11 +55,11 @@ interface FreelancerApplication {
     id: string;
     question_id: string;
     answer: string;
-    question?: {
+    freelancer_questions: {
       question: string;
       required: boolean;
       type: 'text' | 'file';
-    };
+    } | null;
   }>;
 }
 
@@ -140,7 +140,7 @@ export default function AdminPage() {
 
       const { data: applicationsData, error: applicationsError } = await supabase
         .from('freelancer_applications')
-        .select(`*, freelancer_application_answers(id, question_id, answer, question:freelancer_questions(question, required, type))`)
+        .select(`*, freelancer_application_answers(*, freelancer_questions(*))`)
         .order('submitted_at', { ascending: false });
       if (applicationsError) throw applicationsError;
 
@@ -149,7 +149,7 @@ export default function AdminPage() {
         user: usersWithProfiles.find(u => u.id === app.user_id) || { id: app.user_id, email: 'User not found', profile: { id: 'unknown', display_name: 'Unknown User', avatar_url: null, role: 'unknown', account_status: 'unknown', username: 'unknown' } },
         freelancer_application_answers: app.freelancer_application_answers
       }));
-      setApplications(formattedApplications);
+      setApplications(formattedApplications as FreelancerApplication[]);
       setLoadingApplications(false);
 
       const { data: questionsData, error: questionsError } = await supabase.from('freelancer_questions').select('*').order('order_position', { ascending: true });
@@ -288,8 +288,8 @@ export default function AdminPage() {
                                   </div>
                                   <div className="border-t pt-4"><h3 className="text-lg font-medium mb-4">Application Answers</h3><div className="space-y-4">
                                     {selectedApplication.freelancer_application_answers.map(answer => <div key={answer.id} className="border rounded-md p-4">
-                                      <h4 className="font-medium">{answer.question?.question}</h4>
-                                      {answer.question?.type === 'file' && answer.answer ? (
+                                      <h4 className="font-medium">{answer.freelancer_questions?.question}</h4>
+                                      {answer.freelancer_questions?.type === 'file' && answer.answer ? (
                                         <a href={answer.answer} target="_blank" rel="noopener noreferrer" className="text-sm inline-flex items-center gap-2 mt-2 text-blue-600 hover:underline">
                                           <LinkIcon className="h-4 w-4" /> View Uploaded File
                                         </a>
