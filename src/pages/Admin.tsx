@@ -57,7 +57,7 @@ interface FreelancerApplication {
   created_at: string;
   updated_at: string;
   user: User;
-  freelancer_application_answers: ApplicationAnswer[];
+  freelancer_application_answers?: ApplicationAnswer[];
 }
 
 interface Question {
@@ -152,7 +152,6 @@ export default function AdminPage() {
       const formattedApplications = applicationsData.map(app => ({
         ...app,
         user: usersWithProfiles.find(u => u.id === app.user_id) || { id: app.user_id, email: 'User not found', profile: { id: 'unknown', display_name: 'Unknown User', avatar_url: null, role: 'unknown', account_status: 'unknown', username: 'unknown' } },
-        freelancer_application_answers: app.freelancer_application_answers
       }));
       setApplications(formattedApplications as FreelancerApplication[]);
       setLoadingApplications(false);
@@ -288,23 +287,31 @@ export default function AdminPage() {
                                     <div><h3 className="text-sm font-semibold">Submitted</h3><p>{new Date(selectedApplication.submitted_at).toLocaleString()}</p></div>
                                     <div><h3 className="text-sm font-semibold">Status</h3><div>{renderApplicationStatus(selectedApplication.status)}</div></div>
                                   </div>
-                                  <div className="border-t pt-4"><h3 className="text-lg font-medium mb-4">Application Answers</h3><div className="space-y-4">
-                                    {selectedApplication.freelancer_application_answers.map(answer => {
-                                      const question = questionsMap.get(answer.question_id);
-                                      return (
-                                        <div key={answer.id} className="border rounded-md p-4">
-                                          <h4 className="font-medium">{question?.question || 'Question not found'}</h4>
-                                          {question?.type === 'file' && answer.answer ? (
-                                            <a href={answer.answer} target="_blank" rel="noopener noreferrer" className="text-sm inline-flex items-center gap-2 mt-2 text-blue-600 hover:underline">
-                                              <LinkIcon className="h-4 w-4" /> View Uploaded File
-                                            </a>
-                                          ) : (
-                                            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{answer.answer || 'No answer provided'}</p>
-                                          )}
+                                  <div className="border-t pt-4"><h3 className="text-lg font-medium mb-4">Application Answers</h3>
+                                    <div className="space-y-4">
+                                      {selectedApplication.freelancer_application_answers && selectedApplication.freelancer_application_answers.length > 0 ? (
+                                        selectedApplication.freelancer_application_answers.map(answer => {
+                                          const question = questionsMap.get(answer.question_id);
+                                          return (
+                                            <div key={answer.id} className="border rounded-md p-4">
+                                              <h4 className="font-medium">{question?.question || 'Question not found'}</h4>
+                                              {question?.type === 'file' && answer.answer ? (
+                                                <a href={answer.answer} target="_blank" rel="noopener noreferrer" className="text-sm inline-flex items-center gap-2 mt-2 text-blue-600 hover:underline">
+                                                  <LinkIcon className="h-4 w-4" /> View Uploaded File
+                                                </a>
+                                              ) : (
+                                                <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{answer.answer || 'No answer provided'}</div>
+                                              )}
+                                            </div>
+                                          );
+                                        })
+                                      ) : (
+                                        <div className="text-center py-4 text-muted-foreground">
+                                          No answers were submitted for this application.
                                         </div>
-                                      );
-                                    })}
-                                  </div></div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>}
                                 <DialogFooter>
                                   {selectedApplication?.status === 'pending' && <>
