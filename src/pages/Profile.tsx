@@ -24,19 +24,9 @@ import {
 import { Navbar } from '@/components/ui/navbar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { PostgrestError } from '@supabase/supabase-js';
 import AuthGuard from '@/components/auth/AuthGuard';
 import EmailConfirmationCheck from '@/components/auth/EmailConfirmationCheck';
-
-interface ProfileData {
-  id: string;
-  display_name: string | null;
-  bio: string | null;
-  avatar_url: string | null;
-  username: string | null;
-  role: string;
-  account_status: string;
-}
+import { hasServiceRoleKey } from '@/integrations/supabase/admin';
 
 interface FreelancerApplication {
   id: string;
@@ -44,52 +34,32 @@ interface FreelancerApplication {
   submitted_at: string;
 }
 
-type AppError = PostgrestError | Error;
-
-// Helper function to generate a unique ID
-const generateUniqueId = () => {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2);
-};
-
 const Profile = () => {
-  const { user, signOut, isFreelancer, isBuyer, isAdmin } = useAuth();
+  const { user, profile, signOut, isFreelancer, isBuyer, isAdmin, loading: authLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  
   const [freelancerApplication, setFreelancerApplication] = useState<FreelancerApplication | null>(null);
   
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate('/auth');
       return;
     }
     
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, display_name, bio, avatar_url, username, role, account_status')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (error) throw error;
-        
-        setProfileData(data);
-        setDisplayName(data.display_name || '');
-        setBio(data.bio || '');
-        setAvatarUrl(data.avatar_url);
-        
-        // If freelancer, fetch application info
-        if (data.role === 'freelancer') {
+    if (profile) {
+      setDisplayName(profile.display_name || '');
+      setBio(profile.bio || '');
+      
+      if (profile.role === 'freelancer' && user) {
+        const fetchApp = async () => {
           const { data: appData } = await supabase
             .from('freelancer_applications')
             .select('id, status, submitted_at')
@@ -99,169 +69,17 @@ const Profile = () => {
           if (appData) {
             setFreelancerApplication(appData);
           }
-        }
-        
-        // If no avatar and user has auth metadata, try to get avatar from provider
-        if (!data.avatar_url && user.app_metadata && user.app_metadata.provider) {
-          const provider = user.app_metadata.provider;
-          let providerAvatarUrl = null;
-          
-          if (provider === 'github' && user.user_metadata?.avatar_url) {
-            providerAvatarUrl = user.user_metadata.avatar_url;
-          } else if (provider === 'discord' && user.user_metadata?.avatar_url) {
-            providerAvatarUrl = user.user_metadata.avatar_url;
-          }
-          
-          if (providerAvatarUrl) {
-            await updateAvatarUrl(providerAvatarUrl);
-            setAvatarUrl(providerAvatarUrl);
-          }
-        }
-      } catch (error: unknown) {
-        const appError = error as AppError;
-        console.error('Error fetching profile:', appError.message);
-        // If the profile doesn't exist, create it
-        if ('code' in appError && appError.code === 'PGRST116') {
-          createNewProfile();
-        }
-      } finally {
-        setLoading(false);
+        };
+        fetchApp();
       }
-    };
-    
-    fetchProfile();
-  }, [user, navigate]);
-
-  // Helper function to handle API errors with better debugging
-  const handleApiError = (error: unknown, operation: string) => {
-    console.error(`Error during ${operation}:`, error);
-    
-    let errorMessage = "An unknown error occurred";
-    
-    // Cast to a more specific type if possible
-    const apiError = error as { message?: string; code?: string; status?: number };
-    
-    if (apiError.message) {
-      errorMessage = apiError.message;
     }
-    
-    if (apiError.code) {
-      // Handle specific error codes
-      if (apiError.code === '42501') {
-        errorMessage = "You don't have permission to perform this action. Please sign in again.";
-      } else if (apiError.code === '401') {
-        errorMessage = "Authentication error. Please sign in again.";
-      } else if (apiError.code === 'PGRST116') {
-        errorMessage = "Resource not found.";
-      }
-      
-      console.error(`Error code: ${apiError.code}, Status: ${apiError.status}, Message: ${apiError.message}`);
-    }
-    
-    toast({
-      title: "Error",
-      description: errorMessage,
-      variant: "destructive",
-    });
-    
-    return errorMessage;
-  };
+  }, [user, profile, authLoading, navigate]);
 
-  // Update createNewProfile to use the error handler
-  const createNewProfile = async () => {
-    if (!user) return;
-    
-    try {
-      // Make sure we have a valid session before proceeding
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        // Try to refresh the session
-        const { data: refreshData } = await supabase.auth.refreshSession();
-        if (!refreshData.session) {
-          throw new Error("Authentication required. Please sign in.");
-        }
-      }
-      
-      // Try to extract avatar from provider if available
-      let initialAvatarUrl = null;
-      let username = null;
-      let initialRole = 'buyer'; // Default role
-      
-      if (user.app_metadata && user.app_metadata.provider) {
-        const provider = user.app_metadata.provider;
-        
-        if (provider === 'github' && user.user_metadata?.avatar_url) {
-          initialAvatarUrl = user.user_metadata.avatar_url;
-          username = user.user_metadata?.user_name || user.user_metadata?.preferred_username;
-        } else if (provider === 'discord' && user.user_metadata?.avatar_url) {
-          initialAvatarUrl = user.user_metadata.avatar_url;
-          username = user.user_metadata?.full_name || user.user_metadata?.preferred_username;
-        }
-      }
-
-      // Check if user had a preferred role during signup
-      if (user.user_metadata?.initial_role) {
-        initialRole = user.user_metadata.initial_role;
-      }
-      
-      // Ensure we're authenticated before inserting
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
-        throw new Error("Authentication required to create profile");
-      }
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: user.id,
-          display_name: username || user.email?.split('@')[0] || '',
-          bio: '',
-          avatar_url: initialAvatarUrl,
-          username: username || user.email?.split('@')[0] || '',
-          role: initialRole as 'admin' | 'buyer' | 'freelancer',
-          account_status: initialRole === 'freelancer' ? 'pending_application' : 'active',
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Profile creation error:", error);
-        if (error.code === '42501') { // Permission denied
-          throw new Error("Not authorized to create profile. Please ensure you're logged in.");
-        }
-        throw error;
-      }
-      
-      setProfileData(data);
-      setDisplayName(data.display_name || '');
-      setBio(data.bio || '');
-      setAvatarUrl(data.avatar_url);
-
-      // If user is a freelancer, redirect to application
-      if (initialRole === 'freelancer') {
-        toast({
-          title: "Freelancer Profile Created",
-          description: "Please complete your application to continue.",
-        });
-        navigate('/freelancer-application');
-      }
-    } catch (error: unknown) {
-      handleApiError(error, "profile creation");
-    }
-  };
-
-  // Update handleSaveProfile to use the error handler
   const handleSaveProfile = async () => {
-    if (!user || !profileData) return;
+    if (!user || !profile) return;
     
     setSaving(true);
     try {
-      // Ensure we're authenticated
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        throw new Error("Authentication required. Please sign in.");
-      }
-      
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -273,47 +91,33 @@ const Profile = () => {
       
       if (error) throw error;
       
+      await refreshProfile();
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
-    } catch (error: unknown) {
-      handleApiError(error, "profile update");
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  const updateAvatarUrl = async (url: string) => {
-    if (!user) return;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          avatar_url: url,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-    } catch (error: unknown) {
-      const appError = error as AppError;
-      console.error('Error updating avatar URL:', appError.message);
-      throw error;
-    }
-  };
-
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) return;
+    if (!user || !event.target.files || event.target.files.length === 0) return;
     
     const file = event.target.files[0];
     const fileExt = file.name.split('.').pop();
-    const filePath = `avatars/${generateUniqueId()}.${fileExt}`;
+    const filePath = `avatars/${user.id}/${Date.now()}.${fileExt}`;
     
     setUploading(true);
     try {
-      // Upload the image to storage
       const { error: uploadError } = await supabase.storage
         .from('public')
         .upload(filePath, file, {
@@ -323,34 +127,32 @@ const Profile = () => {
       
       if (uploadError) throw uploadError;
       
-      // Get the public URL
       const { data } = supabase.storage
         .from('public')
         .getPublicUrl(filePath);
       
-      const publicUrl = data.publicUrl;
-      
-      // Update profile with new avatar URL
-      await updateAvatarUrl(publicUrl);
-      
-      setAvatarUrl(publicUrl);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: data.publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      await refreshProfile();
       
       toast({
         title: "Avatar updated",
         description: "Your profile picture has been updated successfully.",
       });
-    } catch (error: unknown) {
-      const appError = error as AppError;
-      console.error('Error uploading avatar:', appError.message);
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
       toast({
         title: "Error",
-        description: "Failed to upload avatar. Please try again.",
+        description: error.message || "Failed to upload avatar.",
         variant: "destructive",
       });
     } finally {
       setUploading(false);
-      
-      // Clear the file input
       if (event.target) {
         event.target.value = '';
       }
@@ -358,51 +160,41 @@ const Profile = () => {
   };
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/auth');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  const handleApplyFreelancer = () => {
-    navigate('/freelancer-application');
+    await signOut();
+    navigate('/auth');
   };
 
   const handleDeleteAccount = async () => {
     if (!user) return;
     
+    if (!hasServiceRoleKey()) {
+      toast({
+        title: "Admin Action Required",
+        description: "Account deletion requires the service role key to be configured in your project's environment variables.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setDeleting(true);
     try {
-      // First delete the profile
-      await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', user.id);
-      
-      // Then delete the user auth record
       const { error } = await supabase.auth.admin.deleteUser(user.id);
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      // Sign out
       await signOut();
       
       toast({
         title: "Account deleted",
-        description: "Your account has been deleted successfully.",
+        description: "Your account has been permanently deleted.",
       });
       
       navigate('/');
-    } catch (error: unknown) {
-      const appError = error as AppError;
-      console.error('Error deleting account:', appError.message);
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
       toast({
         title: "Error",
-        description: "Failed to delete account. Please try again later.",
+        description: error.message || "Failed to delete account.",
         variant: "destructive",
       });
     } finally {
@@ -410,70 +202,44 @@ const Profile = () => {
     }
   };
 
-  // Helper function to get initials from display name or email
   const getInitials = () => {
-    if (displayName) {
-      return displayName.substring(0, 2).toUpperCase();
-    } else if (user?.email) {
-      return user.email.substring(0, 2).toUpperCase();
-    }
+    if (displayName) return displayName.substring(0, 2).toUpperCase();
+    if (user?.email) return user.email.substring(0, 2).toUpperCase();
     return 'U';
   };
 
-  // Display role-specific badge variant
   const getRoleBadgeVariant = () => {
-    if (isAdmin) return "success";
-    if (isFreelancer) return "default";
-    return "secondary";
+    if (isAdmin) return "default";
+    if (isFreelancer) return "secondary";
+    return "outline";
   };
 
-  // Format account status for display
   const renderAccountStatus = () => {
-    if (!profileData) return null;
-    
-    const status = profileData.account_status;
-    
+    if (!profile) return null;
+    const status = profile.account_status;
     switch (status) {
-      case 'active':
-        return <Badge variant="success">Active</Badge>;
+      case 'active': return <Badge variant="success">Active</Badge>;
       case 'pending_application':
-      case 'pending_approval':
-        return <Badge variant="warning">Pending Approval</Badge>;
-      case 'suspended':
-        return <Badge variant="destructive">Suspended</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+      case 'pending_approval': return <Badge variant="warning">Pending Approval</Badge>;
+      case 'suspended': return <Badge variant="destructive">Suspended</Badge>;
+      case 'rejected': return <Badge variant="destructive">Rejected</Badge>;
+      default: return <Badge>{status}</Badge>;
     }
   };
 
-  // Format freelancer application status
   const renderApplicationStatus = () => {
     if (!freelancerApplication) return null;
-    
     const status = freelancerApplication.status;
-    
     switch (status) {
-      case 'approved':
-        return <Badge variant="success">Approved</Badge>;
-      case 'pending':
-        return <Badge variant="warning">Pending Review</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+      case 'approved': return <Badge variant="success">Approved</Badge>;
+      case 'pending': return <Badge variant="warning">Pending Review</Badge>;
+      case 'rejected': return <Badge variant="destructive">Rejected</Badge>;
+      default: return <Badge>{status}</Badge>;
     }
   };
 
-  // Handle navigation to freelancer application
-  const handleGoToApplication = () => {
-    navigate('/freelancer-application');
-  };
+  const isApprovedFreelancer = isFreelancer && profile?.account_status === 'active';
 
-  const isApprovedFreelancer = isFreelancer && profileData?.account_status === 'active';
-
-  // Add this section before the return statement
   const renderFreelancerActions = () => {
     if (!isApprovedFreelancer) return null;
     
@@ -484,22 +250,18 @@ const Profile = () => {
           <CardDescription>Manage your freelancer services</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                className="flex-1"
-                onClick={() => navigate('/freelancer/posts')}
-              >
-                Manage Your Posts
-              </Button>
-            </div>
-          </div>
+          <Button 
+            className="w-full"
+            onClick={() => navigate('/freelancer/posts')}
+          >
+            Manage Your Posts
+          </Button>
         </CardContent>
       </Card>
     );
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -526,24 +288,23 @@ const Profile = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Badge variant={getRoleBadgeVariant()}>
-                    {isAdmin ? 'Admin' : isFreelancer ? 'Freelancer' : 'Buyer'}
+                    {profile?.role}
                   </Badge>
-                  {profileData && renderAccountStatus()}
+                  {renderAccountStatus()}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Avatar Section */}
               <div className="flex flex-col items-center space-y-4">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={avatarUrl || undefined} />
+                  <AvatarImage src={profile?.avatar_url || undefined} />
                   <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
                 
                 <div className="flex items-center">
                   <label htmlFor="avatar-upload" className="cursor-pointer">
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" className="relative" disabled={uploading}>
+                    <Button variant="outline" className="relative" disabled={uploading} asChild>
+                      <div>
                         {uploading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -555,29 +316,22 @@ const Profile = () => {
                             Upload Avatar
                           </>
                         )}
-                      </Button>
-                      <input
-                        id="avatar-upload"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        disabled={uploading}
-                      />
-                    </div>
+                        <input
+                          id="avatar-upload"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          disabled={uploading}
+                        />
+                      </div>
+                    </Button>
                   </label>
                 </div>
-                {user?.app_metadata?.provider && (
-                  <p className="text-sm text-muted-foreground">
-                    {avatarUrl && user.app_metadata.provider === 'github' && 'Using GitHub avatar'}
-                    {avatarUrl && user.app_metadata.provider === 'discord' && 'Using Discord avatar'}
-                  </p>
-                )}
               </div>
               
               <Separator className="my-4" />
 
-              {/* Basic Info */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -586,9 +340,6 @@ const Profile = () => {
                   disabled
                   className="bg-muted"
                 />
-                <p className="text-sm text-muted-foreground">
-                  Your email address cannot be changed
-                </p>
               </div>
               
               <div className="space-y-2">
@@ -599,9 +350,6 @@ const Profile = () => {
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Enter your display name"
                 />
-                <p className="text-sm text-muted-foreground">
-                  This name will be displayed in the marketplace
-                </p>
               </div>
               
               <div className="space-y-2">
@@ -613,90 +361,62 @@ const Profile = () => {
                   placeholder="Tell us about yourself"
                   rows={5}
                 />
-                <p className="text-sm text-muted-foreground">
-                  Write a short bio to introduce yourself to other users
-                </p>
               </div>
 
-              {/* Freelancer specific section */}
               {isFreelancer && (
                 <>
                   <Separator className="my-4" />
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Freelancer Status</h3>
-                    
                     <div className="bg-muted rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">Application Status</p>
-                          {freelancerApplication ? (
+                          {freelancerApplication && (
                             <p className="text-sm text-muted-foreground">
                               Submitted on {new Date(freelancerApplication.submitted_at).toLocaleDateString()}
                             </p>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              You need to submit an application
-                            </p>
                           )}
                         </div>
-                        
-                        <div>
-                          {renderApplicationStatus() || (
-                            <Badge variant="warning">Not Submitted</Badge>
-                          )}
-                        </div>
+                        {renderApplicationStatus()}
                       </div>
-                      
-                      {/* Show application button if needed */}
-                      {(profileData?.account_status === 'pending_application' || 
-                        profileData?.account_status === 'rejected') && (
-                        <Button 
-                          onClick={handleGoToApplication}
-                          className="w-full mt-2"
-                        >
+                      {(profile?.account_status === 'pending_application' || profile?.account_status === 'rejected') && (
+                        <Button onClick={() => navigate('/freelancer-application')} className="w-full mt-2">
                           <FileEdit className="mr-2 h-4 w-4" />
-                          {freelancerApplication ? 'View Application' : 'Complete Application'}
+                          {freelancerApplication ? 'View/Edit Application' : 'Complete Application'}
                         </Button>
-                      )}
-                      
-                      {/* Show warning if application rejected */}
-                      {profileData?.account_status === 'rejected' && (
-                        <div className="flex items-start space-x-2 mt-2 text-yellow-500 bg-yellow-500/10 p-3 rounded-md">
-                          <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-                          <p className="text-sm">
-                            Your application was rejected. Please update and resubmit your application.
-                          </p>
-                        </div>
                       )}
                     </div>
                   </div>
                 </>
               )}
 
-              {/* Freelancer Tools */}
               {renderFreelancerActions()}
 
-              <Separator className="my-4" />
-
-              {/* Account Actions */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Account Actions</h3>
-                {isBuyer && (
-                  <div>
+              {isBuyer && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="space-y-4">
+                     <h3 className="text-lg font-medium">Account Actions</h3>
                     <Button 
                       variant="outline" 
-                      className="w-full flex items-center justify-center" 
-                      onClick={handleApplyFreelancer}
+                      className="w-full" 
+                      onClick={() => navigate('/freelancer-application')}
                     >
                       <FileEdit className="mr-2 h-4 w-4" />
                       Apply to become a Freelancer
                     </Button>
                   </div>
-                )}
+                </>
+              )}
 
+              <Separator className="my-4" />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Sign Out & Delete</h3>
                 <Button 
                   variant="outline" 
-                  className="w-full flex items-center justify-center" 
+                  className="w-full" 
                   onClick={handleSignOut}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -714,8 +434,7 @@ const Profile = () => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your
-                        account and remove your data from our servers.
+                        This action cannot be undone. This will permanently delete your account and remove your data from our servers.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -725,14 +444,8 @@ const Profile = () => {
                         disabled={deleting}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        {deleting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Deleting...
-                          </>
-                        ) : (
-                          "Delete Account"
-                        )}
+                        {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Delete Account
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -744,23 +457,13 @@ const Profile = () => {
                 onClick={handleSaveProfile} 
                 disabled={saving}
               >
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </>
-                )}
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save Changes
               </Button>
             </CardFooter>
           </Card>
           
-          {/* Email Confirmation Section */}
-          <div className="mt-6">
+          <div className="mt-6 max-w-2xl mx-auto">
             <EmailConfirmationCheck />
           </div>
         </div>
@@ -769,4 +472,4 @@ const Profile = () => {
   );
 };
 
-export default Profile; 
+export default Profile;
