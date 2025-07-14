@@ -15,7 +15,7 @@
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
-  animation: shine 5s linear infinite;
+  animation: shine 2s linear infinite;
 }
 
 @keyframes shine {
