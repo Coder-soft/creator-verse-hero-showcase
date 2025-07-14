@@ -1,7 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { createClient, type AuthUser, type Session, type AuthError } from '@supabase/supabase-js';
+import { type AuthUser, type Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { supabaseAdmin, hasServiceRoleKey } from '@/integrations/supabase/admin';
 import { Tables } from '@/integrations/supabase/types';
 import { ADMIN_EMAILS } from '@/utils/admin-config';
 
@@ -28,58 +27,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch profile data from Supabase
-  const fetchProfile = async (userId: string) => {
-    if (!userId) return null;
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return null;
-    }
-    
-    return data;
-  };
-
-  const refreshProfile = async () => {
-    if (user) {
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
-    }
-  };
-
+  // 1. Handle auth state changes from Supabase
   useEffect(() => {
-    setLoading(true);
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        try {
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
-        } catch (error) {
-          console.error("Error in auth state change:", error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setProfile(null);
+      // If there's no user, we know we are done loading.
+      if (!session?.user) {
         setLoading(false);
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
+
+  // 2. Fetch profile when user object is available or changes
+  useEffect(() => {
+    // Don't fetch profile if no user
+    if (user) {
+      setLoading(true); // Start loading profile
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found, which is not a fatal error
+            console.error('Error fetching profile:', error);
+          }
+          setProfile(data);
+          setLoading(false); // Finish loading
+        });
+    } else {
+      // No user, so no profile to fetch.
+      setProfile(null);
+    }
+  }, [user]);
 
   const signOut = async () => {
     try {
@@ -89,6 +72,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+      setProfile(data);
     }
   };
 
