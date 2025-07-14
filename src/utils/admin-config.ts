@@ -4,4 +4,4 @@ export const ADMIN_EMAILS = [
   'powernplant101@gmail.com',
   // Add your actual email address here to grant yourself admin access
   // 'your-email@example.com',
-]; 
+];
