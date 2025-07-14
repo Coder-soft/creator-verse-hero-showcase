@@ -237,12 +237,12 @@ export default function AdminPage() {
   };
 
   const renderUserStatus = (status: string) => {
-    const variants = { active: 'success', pending_application: 'warning', pending_approval: 'warning', suspended: 'destructive', rejected: 'destructive' };
-    return <Badge variant={variants[status] || 'default'}>{status.replace('_', ' ')}</Badge>;
+    const variants: { [key: string]: "success" | "warning" | "destructive" | "default" } = { active: 'success', pending_application: 'warning', pending_approval: 'warning', suspended: 'destructive', rejected: 'destructive' };
+    return <Badge variant={variants[status] || 'default'}>{status.replace(/_/g, ' ')}</Badge>;
   };
 
   const renderApplicationStatus = (status: string) => {
-    const variants = { approved: 'success', pending: 'warning', rejected: 'destructive' };
+    const variants: { [key: string]: "success" | "warning" | "destructive" | "default" } = { approved: 'success', pending: 'warning', rejected: 'destructive' };
     return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
   };
 
@@ -286,7 +286,7 @@ export default function AdminPage() {
                                     <div><h3 className="text-sm font-semibold">Applicant</h3><p>{selectedApplication.user.profile.display_name || 'N/A'}</p></div>
                                     <div><h3 className="text-sm font-semibold">Email</h3><p>{selectedApplication.user.email}</p></div>
                                     <div><h3 className="text-sm font-semibold">Submitted</h3><p>{new Date(selectedApplication.submitted_at).toLocaleString()}</p></div>
-                                    <div><h3 className="text-sm font-semibold">Status</h3><p>{renderApplicationStatus(selectedApplication.status)}</p></div>
+                                    <div><h3 className="text-sm font-semibold">Status</h3><div>{renderApplicationStatus(selectedApplication.status)}</div></div>
                                   </div>
                                   <div className="border-t pt-4"><h3 className="text-lg font-medium mb-4">Application Answers</h3><div className="space-y-4">
                                     {selectedApplication.freelancer_application_answers.map(answer => {
