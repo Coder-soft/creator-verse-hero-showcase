@@ -64,14 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         try {
           const profileData = await fetchProfile(session.user.id);
-          
-          // If profile doesn't exist but user is authenticated, create it
-          if (!profileData) {
-            const newProfileData = await createInitialProfile(session.user);
-            setProfile(newProfileData);
-          } else {
-            setProfile(profileData);
-          }
+          setProfile(profileData);
         } catch (error) {
           console.error("Error in auth state change:", error);
         } finally {
@@ -87,110 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
-
-  // Function to create initial profile for authenticated users
-  const createInitialProfile = async (authUser: AuthUser) => {
-    if (!authUser) return null;
-    
-    try {
-      // Extract role preference from user metadata if it exists
-      let initialRole = 'buyer'; // Default role
-      if (authUser.user_metadata?.initial_role) {
-        initialRole = authUser.user_metadata.initial_role;
-      }
-      
-      // Try to extract avatar from provider if available
-      let initialAvatarUrl = null;
-      let username = null;
-      
-      if (authUser.app_metadata && authUser.app_metadata.provider) {
-        const provider = authUser.app_metadata.provider;
-        
-        if (provider === 'github' && authUser.user_metadata?.avatar_url) {
-          initialAvatarUrl = authUser.user_metadata.avatar_url;
-          username = authUser.user_metadata?.user_name || authUser.user_metadata?.preferred_username;
-        } else if (provider === 'discord' && authUser.user_metadata?.avatar_url) {
-          initialAvatarUrl = authUser.user_metadata.avatar_url;
-          username = authUser.user_metadata?.full_name || authUser.user_metadata?.preferred_username;
-        }
-      }
-      
-      // Check if profile already exists to avoid duplicate inserts
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .maybeSingle();
-        
-      if (existingProfile) {
-        console.log("Profile already exists, returning existing profile");
-        return existingProfile;
-      }
-      
-      // Generate unique username
-      let baseUsername = username || authUser.email?.split('@')[0] || '';
-      let uniqueUsername = baseUsername;
-      let counter = 1;
-      
-      // Check if username already exists and make it unique
-      while (true) {
-        const { data: existingUser } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', uniqueUsername)
-          .maybeSingle();
-          
-        if (!existingUser) break;
-        uniqueUsername = `${baseUsername}${counter}`;
-        counter++;
-      }
-      
-      const newProfile = {
-        user_id: authUser.id,
-        display_name: username || authUser.email?.split('@')[0] || '',
-        bio: '',
-        avatar_url: initialAvatarUrl,
-        username: uniqueUsername,
-        role: initialRole as 'admin' | 'buyer' | 'freelancer',
-        account_status: initialRole === 'freelancer' ? 'pending_application' : 'active',
-      };
-      
-      console.log("Creating new profile:", newProfile);
-      
-      let result;
-      
-      // Try using the admin client first if we have a service role key
-      if (hasServiceRoleKey()) {
-        console.log("Using admin client to create profile (bypasses RLS)");
-        result = await supabaseAdmin
-          .from('profiles')
-          .insert(newProfile)
-          .select()
-          .single();
-      } else {
-        // Fall back to regular client if no service role key
-        console.log("Using regular client to create profile");
-        result = await supabase
-          .from('profiles')
-          .insert(newProfile)
-          .select()
-          .single();
-      }
-      
-      const { data, error } = result;
-      
-      if (error) {
-        console.error("Error creating initial profile:", error);
-        console.error("Error details:", JSON.stringify(error, null, 2));
-        return null;
-      }
-      
-      return data;
-    } catch (error) {
-      console.error("Exception creating initial profile:", error);
-      return null;
-    }
-  };
 
   const signOut = async () => {
     try {
