@@ -51,31 +51,31 @@ export type Database = {
       }
       conversations: {
         Row: {
-          id: string
-          post_id: string | null
           buyer_id: string
+          created_at: string | null
           freelancer_id: string
-          created_at: string
-          updated_at: string
-          last_message_at: string
+          id: string
+          last_message_at: string | null
+          post_id: string | null
+          updated_at: string | null
         }
         Insert: {
-          id?: string
-          post_id?: string | null
           buyer_id: string
+          created_at?: string | null
           freelancer_id: string
-          created_at?: string
-          updated_at?: string
-          last_message_at?: string
+          id?: string
+          last_message_at?: string | null
+          post_id?: string | null
+          updated_at?: string | null
         }
         Update: {
-          id?: string
-          post_id?: string | null
           buyer_id?: string
+          created_at?: string | null
           freelancer_id?: string
-          created_at?: string
-          updated_at?: string
-          last_message_at?: string
+          id?: string
+          last_message_at?: string | null
+          post_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -85,46 +85,32 @@ export type Database = {
             referencedRelation: "freelancer_posts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "conversations_buyer_id_fkey"
-            columns: ["buyer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversations_freelancer_id_fkey"
-            columns: ["freelancer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
         ]
       }
       freelancer_application_answers: {
         Row: {
-          id: string
-          application_id: string
-          question_id: string
           answer: string | null
-          created_at: string
-          updated_at: string
+          application_id: string
+          created_at: string | null
+          id: string
+          question_id: string
+          updated_at: string | null
         }
         Insert: {
-          id?: string
-          application_id: string
-          question_id: string
           answer?: string | null
-          created_at?: string
-          updated_at?: string
+          application_id: string
+          created_at?: string | null
+          id?: string
+          question_id: string
+          updated_at?: string | null
         }
         Update: {
-          id?: string
-          application_id?: string
-          question_id?: string
           answer?: string | null
-          created_at?: string
-          updated_at?: string
+          application_id?: string
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -140,163 +126,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "freelancer_questions"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       freelancer_applications: {
         Row: {
+          created_at: string | null
           id: string
-          user_id: string
-          status: string
-          submitted_at: string
           reviewed_at: string | null
           reviewed_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
+          status: string | null
+          submitted_at: string | null
+          updated_at: string | null
           user_id: string
-          status?: string
-          submitted_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          status?: string
-          submitted_at?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "freelancer_applications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "freelancer_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      freelancer_questions: {
-        Row: {
-          id: string
-          question: string
-          required: boolean
-          order_position: number
-          created_at: string
-          updated_at: string
         }
         Insert: {
+          created_at?: string | null
           id?: string
-          question: string
-          required?: boolean
-          order_position: number
-          created_at?: string
-          updated_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
+          created_at?: string | null
           id?: string
-          question?: string
-          required?: boolean
-          order_position?: number
-          created_at?: string
-          updated_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
-      
-      freelancer_posts: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          content: string
-          cover_image_url: string | null
-          image_url: string | null
-          price: number
-          category: string | null
-          status: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          content: string
-          cover_image_url?: string | null
-          image_url?: string | null
-          price: number
-          category?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          content?: string
-          cover_image_url?: string | null
-          image_url?: string | null
-          price?: number
-          category?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "freelancer_posts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      
       freelancer_post_reviews: {
         Row: {
+          comment: string | null
+          created_at: string | null
           id: string
           post_id: string
-          user_id: string
           rating: number
-          comment: string | null
-          created_at: string
-          updated_at: string
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
+          comment?: string | null
+          created_at?: string | null
           id?: string
           post_id: string
-          user_id: string
           rating: number
-          comment?: string | null
-          created_at?: string
-          updated_at?: string
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
+          comment?: string | null
+          created_at?: string | null
           id?: string
           post_id?: string
-          user_id?: string
           rating?: number
-          comment?: string | null
-          created_at?: string
-          updated_at?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -306,16 +198,115 @@ export type Database = {
             referencedRelation: "freelancer_posts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "freelancer_post_reviews_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
         ]
       }
-      
+      freelancer_posts: {
+        Row: {
+          category: string | null
+          content: string
+          cover_image_url: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          price: number
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          price: number
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          price?: number
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      freelancer_questions: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_position: number
+          question: string
+          required: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_position: number
+          question: string
+          required?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_position?: number
+          question?: string
+          required?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          read: boolean | null
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_sections: {
         Row: {
           content: Json
@@ -401,87 +392,42 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
           user_id: string
           username: string | null
-          role: string
-          account_status: string
         }
         Insert: {
+          account_status?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id: string
           username?: string | null
-          role?: string
-          account_status?: string
         }
         Update: {
+          account_status?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id?: string
           username?: string | null
-          role?: string
-          account_status?: string
         }
         Relationships: []
-      }
-      messages: {
-        Row: {
-          id: string
-          conversation_id: string
-          sender_id: string
-          content: string
-          read: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          conversation_id: string
-          sender_id: string
-          content: string
-          read?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          conversation_id?: string
-          sender_id?: string
-          content?: string
-          read?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
       }
     }
     Views: {
@@ -495,6 +441,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      mark_messages_as_read: {
+        Args: { p_conversation_id: string; p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
@@ -625,6 +575,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "buyer", "freelancer"],
+    },
   },
 } as const

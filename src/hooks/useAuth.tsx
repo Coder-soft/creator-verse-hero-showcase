@@ -127,13 +127,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return existingProfile;
       }
       
+      // Generate unique username
+      let baseUsername = username || authUser.email?.split('@')[0] || '';
+      let uniqueUsername = baseUsername;
+      let counter = 1;
+      
+      // Check if username already exists and make it unique
+      while (true) {
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', uniqueUsername)
+          .maybeSingle();
+          
+        if (!existingUser) break;
+        uniqueUsername = `${baseUsername}${counter}`;
+        counter++;
+      }
+      
       const newProfile = {
         user_id: authUser.id,
         display_name: username || authUser.email?.split('@')[0] || '',
         bio: '',
         avatar_url: initialAvatarUrl,
-        username: username || authUser.email?.split('@')[0] || '',
-        role: initialRole,
+        username: uniqueUsername,
+        role: initialRole as 'admin' | 'buyer' | 'freelancer',
         account_status: initialRole === 'freelancer' ? 'pending_application' : 'active',
       };
       
