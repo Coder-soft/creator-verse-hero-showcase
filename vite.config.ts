@@ -18,5 +18,15 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react', 'react-dom', '@radix-ui/react-dialog', '@radix-ui/react-radio-group'],
+  },
+  optimizeDeps: {
+    include: ['@radix-ui/react-dialog', '@radix-ui/react-radio-group'],
+    force: true,
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
   },
 }));

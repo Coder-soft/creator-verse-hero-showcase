@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { TypingText } from "@/components/ui/typing-text";
-import { ArrowRight, Sparkles, Zap, Users } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export function HeroSection() {
   const typingTexts = [
@@ -52,13 +52,6 @@ export function HeroSection() {
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-primary/50 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-primary rounded-full mt-2"></div>
         </div>
       </div>
     </section>
