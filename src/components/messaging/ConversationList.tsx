@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -47,30 +47,7 @@ export function ConversationList({ onSelectConversation, selectedConversationId 
   const [loading, setLoading] = useState<boolean>(true);
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      loadConversations();
-
-      // Subscribe to updates
-      const channel = supabase
-        .channel('conversation-updates')
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-        }, () => {
-          // Reload conversations when messages change
-          loadConversations();
-        })
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user]);
-
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
@@ -142,7 +119,30 @@ export function ConversationList({ onSelectConversation, selectedConversationId 
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, profile, toast]);
+
+  useEffect(() => {
+    if (user) {
+      loadConversations();
+
+      // Subscribe to updates
+      const channel = supabase
+        .channel('conversation-updates')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+        }, () => {
+          // Reload conversations when messages change
+          loadConversations();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, loadConversations]);
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -256,4 +256,5 @@ export function ConversationList({ onSelectConversation, selectedConversationId 
       </CardContent>
     </Card>
   );
-} 
+}
+ 

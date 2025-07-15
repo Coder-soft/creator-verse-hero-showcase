@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/ui/navbar";
@@ -19,24 +19,7 @@ export default function DbSetup() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<TableCheckResult[]>([]);
 
-  useEffect(() => {
-    // Check if user is admin
-    if (profile && !isAdmin) {
-      toast({
-        title: "Access Denied",
-        description: "Only administrators can access the database setup page.",
-        variant: "destructive",
-      });
-      navigate("/");
-      return;
-    }
-
-    if (user) {
-      checkDatabaseTables();
-    }
-  }, [user, profile, isAdmin, navigate, toast]);
-
-  const checkDatabaseTables = async () => {
+  const checkDatabaseTables = useCallback(async () => {
     setChecking(true);
     try {
       const tableResults = await checkRequiredTables();
@@ -52,7 +35,24 @@ export default function DbSetup() {
       setChecking(false);
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    // Check if user is admin
+    if (profile && !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only administrators can access the database setup page.",
+        variant: "destructive",
+      });
+      navigate("/");
+      return;
+    }
+
+    if (user) {
+      checkDatabaseTables();
+    }
+  }, [user, profile, isAdmin, navigate, toast, checkDatabaseTables]);
 
   const runMigrations = async () => {
     setRunning(true);

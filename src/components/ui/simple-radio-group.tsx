@@ -21,12 +21,12 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
     }, [value]);
 
     // Handle value changes
-    const handleValueChange = (newValue: string) => {
+    const handleValueChange = React.useCallback((newValue: string) => {
       if (!value) {
         setSelectedValue(newValue);
       }
       onValueChange?.(newValue);
-    };
+    }, [value, onValueChange]);
 
     // Pass the selected value and change handler to the context
     const contextValue = React.useMemo(
@@ -34,7 +34,7 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
         value: selectedValue,
         onValueChange: handleValueChange,
       }),
-      [selectedValue]
+      [selectedValue, handleValueChange]
     );
 
     return (

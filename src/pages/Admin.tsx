@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,19 +89,7 @@ export default function AdminPage() {
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [newQuestion, setNewQuestion] = useState({ question: '', required: true, type: 'text' as 'text' | 'file' });
 
-  useEffect(() => {
-    if (!user && !loadingUsers) {
-      navigate('/auth');
-      return;
-    }
-    if (profile && !isAdmin && !loadingUsers) {
-      navigate('/');
-      return;
-    }
-    fetchData();
-  }, [user, profile, isAdmin, navigate, toast]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoadingUsers(true);
     setLoadingApplications(true);
     setLoadingQuestions(true);
@@ -114,7 +102,7 @@ export default function AdminPage() {
       setLoadingQuestions(false);
 
       // Fetch users
-      let userEmailMap = new Map<string, string>();
+      const userEmailMap = new Map<string, string>();
       if (hasServiceRoleKey()) {
         try {
           const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
@@ -161,7 +149,19 @@ export default function AdminPage() {
       toast({ title: 'Error', description: 'Failed to load admin data.', variant: 'destructive' });
       setLoadingUsers(false); setLoadingApplications(false); setLoadingQuestions(false);
     }
-  };
+  }, [toast, user]);
+
+  useEffect(() => {
+    if (!user && !loadingUsers) {
+      navigate('/auth');
+      return;
+    }
+    if (profile && !isAdmin && !loadingUsers) {
+      navigate('/');
+      return;
+    }
+    fetchData();
+  }, [user, profile, isAdmin, navigate, toast, fetchData, loadingUsers]);
 
   const handleApplicationAction = async (applicationId: string, status: 'approved' | 'rejected', userId: string) => {
     setProcessing(true);

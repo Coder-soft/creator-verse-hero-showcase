@@ -97,11 +97,11 @@ const Profile = () => {
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update profile.",
+        description: error instanceof Error ? error.message : "Failed to update profile.",
         variant: "destructive",
       });
     } finally {
@@ -144,11 +144,11 @@ const Profile = () => {
         title: "Avatar updated",
         description: "Your profile picture has been updated successfully.",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error uploading avatar:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to upload avatar.",
+        description: error instanceof Error ? error.message : "Failed to upload avatar.",
         variant: "destructive",
       });
     } finally {
@@ -190,11 +190,11 @@ const Profile = () => {
       });
       
       navigate('/');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting account:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete account.",
+        description: error instanceof Error ? error.message : "Failed to delete account.",
         variant: "destructive",
       });
     } finally {

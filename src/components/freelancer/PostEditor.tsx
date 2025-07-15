@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,13 +55,7 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     "Other"
   ];
 
-  useEffect(() => {
-    if (postId) {
-      loadExistingPost(postId);
-    }
-  }, [postId]);
-
-  const loadExistingPost = async (id: string) => {
+  const loadExistingPost = useCallback(async (id: string) => {
     setLoading(true);
     try {
       const { data: post, error } = await supabase
@@ -90,7 +84,13 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (postId) {
+      loadExistingPost(postId);
+    }
+  }, [postId, loadExistingPost]);
 
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

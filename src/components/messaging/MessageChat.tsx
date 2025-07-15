@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,59 +74,38 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
     avatarUrl: string | null;
   } | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      if (conversationId) {
-        loadExistingConversation(conversationId);
-      } else if (postId && freelancerId && profile?.role === 'buyer') {
-        // Buyer initiating a conversation about a post
-        initNewConversation(postId, freelancerId);
-      } else if (conversationId === undefined && postId === undefined && freelancerId === undefined) {
-        // No props provided - invalid state
-        toast({
-          title: "Error",
-          description: "Invalid chat parameters",
-          variant: "destructive",
-        });
-      }
+  const markMessagesAsRead = useCallback(async () => {
+    if (!conversation || !user) return;
+    
+    try {
+      // Call the stored function to mark messages as read
+      await supabase.rpc('mark_messages_as_read', {
+        p_conversation_id: conversation.id,
+        p_user_id: user.id
+      });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
     }
-  }, [user, conversationId, postId, freelancerId, profile]);
+  }, [conversation, user]);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const loadMessages = useCallback(async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*, sender_profile:profiles!messages_sender_id_fkey(username, display_name, avatar_url)")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+      
+      if (error) throw error;
+      
+      setMessages(data || []);
+      markMessagesAsRead();
+    } catch (error) {
+      console.error("Error loading messages:", error);
+    }
+  }, [markMessagesAsRead]);
 
-  // Subscribe to new messages for this conversation
-  useEffect(() => {
-    if (!conversation) return;
-    
-    const channel = supabase
-      .channel(`conversation-${conversation.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=eq.${conversation.id}`,
-      }, (payload) => {
-        // Add the new message to the messages list
-        loadMessages(conversation.id);
-      })
-      .subscribe();
-    
-    // Mark messages as read when conversation is opened
-    markMessagesAsRead();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [conversation]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const loadExistingConversation = async (id: string) => {
+  const loadExistingConversation = useCallback(async (id: string) => {
     setLoading(true);
     try {
       // Load conversation details
@@ -177,9 +156,9 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast, loadMessages]);
 
-  const initNewConversation = async (postId: string, freelancerId: string) => {
+  const initNewConversation = useCallback(async (postId: string, freelancerId: string) => {
     setLoading(true);
     try {
       if (!user || !profile) {
@@ -277,37 +256,58 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, profile, toast, loadExistingConversation]);
 
-  const loadMessages = async (conversationId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*, sender_profile:profiles!messages_sender_id_fkey(username, display_name, avatar_url)")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-      
-      if (error) throw error;
-      
-      setMessages(data || []);
-      markMessagesAsRead();
-    } catch (error) {
-      console.error("Error loading messages:", error);
+  useEffect(() => {
+    if (user) {
+      if (conversationId) {
+        loadExistingConversation(conversationId);
+      } else if (postId && freelancerId && profile?.role === 'buyer') {
+        // Buyer initiating a conversation about a post
+        initNewConversation(postId, freelancerId);
+      } else if (conversationId === undefined && postId === undefined && freelancerId === undefined) {
+        // No props provided - invalid state
+        toast({
+          title: "Error",
+          description: "Invalid chat parameters",
+          variant: "destructive",
+        });
+      }
     }
-  };
+  }, [user, conversationId, postId, freelancerId, profile, loadExistingConversation, initNewConversation, toast]);
 
-  const markMessagesAsRead = async () => {
-    if (!conversation || !user) return;
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Subscribe to new messages for this conversation
+  useEffect(() => {
+    if (!conversation) return;
     
-    try {
-      // Call the stored function to mark messages as read
-      await supabase.rpc('mark_messages_as_read', {
-        p_conversation_id: conversation.id,
-        p_user_id: user.id
-      });
-    } catch (error) {
-      console.error("Error marking messages as read:", error);
-    }
+    const channel = supabase
+      .channel(`conversation-${conversation.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversation.id}`,
+      }, (payload) => {
+        // Add the new message to the messages list
+        loadMessages(conversation.id);
+      })
+      .subscribe();
+    
+    // Mark messages as read when conversation is opened
+    markMessagesAsRead();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation, loadMessages, markMessagesAsRead]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSendMessage = async () => {
@@ -486,4 +486,5 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
       </CardFooter>
     </Card>
   );
-} 
+}
+ 
