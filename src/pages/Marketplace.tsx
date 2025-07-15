@@ -52,11 +52,7 @@ export default function Marketplace() {
     "Marketing"
   ];
 
-  useEffect(() => {
-    fetchPosts();
-  }, [sortBy, selectedCategory]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     
     try {
@@ -65,7 +61,7 @@ export default function Marketplace() {
         .from('freelancer_posts')
         .select(`
           *,
-          profiles (username, display_name, avatar_url),
+          profiles!user_id(username, display_name, avatar_url),
           freelancer_post_reviews (rating)
         `)
         .eq('status', 'published');
@@ -126,7 +122,11 @@ export default function Marketplace() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, selectedCategory]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const getInitials = (name?: string) => {
     if (!name) return "U";

@@ -116,14 +116,8 @@ export default function AuthPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 grid place-items-center px-4 py-12">
+      <main className="flex-1 grid place-items-center px-4 pt-24 pb-12">
         <div className="w-full max-w-md space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold">Welcome</h1>
-            <p className="text-muted-foreground">
-              {isSignUp ? "Create an account to get started" : "Sign in to your account"}
-            </p>
-          </div>
           
           {emailSent && (
             <Alert className="mb-4 bg-blue-50 border-blue-200">

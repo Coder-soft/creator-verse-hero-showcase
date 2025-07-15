@@ -44,10 +44,9 @@ export function OurPartners() {
             -webkit-text-fill-color: transparent;
             color: transparent;
             background-image: linear-gradient(90deg, 
+              #FFFFFF, /* White */
               #ffd700, /* Gold */
-              #f5bc42, /* Light amber */
-              #e6b422, /* Rich amber */
-              #f0c05a, /* Pale gold */
+              #FFFFFF, /* White */
               #ffd700  /* Gold again for seamless loop */
             );
             animation: gradientMove 3s linear infinite;
