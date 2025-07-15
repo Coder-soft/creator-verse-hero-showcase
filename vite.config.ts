@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
     dedupe: ['react', 'react-dom', '@radix-ui/react-dialog', '@radix-ui/react-radio-group'],
   },
   optimizeDeps: {
-    include: ['@radix-ui/react-dialog', '@radix-ui/react-radio-group'],
+    exclude: ['@radix-ui/react-dialog', '@radix-ui/react-radio-group'],
     force: true,
   },
   build: {
