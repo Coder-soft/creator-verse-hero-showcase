@@ -88,26 +88,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isFreelancer = Boolean(profile?.role === 'freelancer');
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      profile,
-      isAdmin,
-      isBuyer,
-      isFreelancer,
-      loading, 
-      signOut,
-      refreshProfile
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        isAdmin,
+        isBuyer,
+        isFreelancer,
+        loading,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};
