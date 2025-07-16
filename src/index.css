@@ -37,6 +37,7 @@ All colors MUST be HSL.
     --ring: 45 100% 51%; /* Gold */
 
     --radius: 0.5rem;
+    --font-sans: "Inter", sans-serif;
   }
 
   .dark {
@@ -67,6 +68,7 @@ All colors MUST be HSL.
     --border: 217 33% 17%;
     --input: 217 33% 17%;
     --ring: 45 100% 51%; /* Gold */
+    --font-sans: "Inter", sans-serif;
   }
 }
 
@@ -76,7 +78,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
 }
 
