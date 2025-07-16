@@ -452,7 +452,9 @@ export default function PostDetails() {
                               <p className="text-xs text-muted-foreground mb-2">Delivery: {pkg.deliveryTime} day(s)</p>
                             )}
                             <p className="text-2xl font-bold mb-4">${pkg.price || "-"}</p>
-                            <Button disabled variant="secondary">Purchase (Coming Soon)</Button>
+                            <a href="https://discord.gg/2VHTdT7mrJ" target="_blank" rel="noopener noreferrer" className="w-full">
+                              <Button variant="secondary" className="w-full">Join Discord to Purchase</Button>
+                            </a>
                           </div>
                         );
                       })}
