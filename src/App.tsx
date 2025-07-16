@@ -1,47 +1,51 @@
-import { Toaster } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
-import Layout from './components/Layout';
-import { navItems } from './components/Sidebar';
-import Apply from './pages/freelancer/Apply';
-import PostEditor from './pages/freelancer/post/PostEditor';
-import Index from './pages/Index';
-import Login from './pages/Login';
-import Profile from './pages/Profile';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import FreelancerApplications from './pages/admin/FreelancerApplications';
-import Application from './pages/application/Application';
-import FreelancerPosts from './pages/freelancer/FreelancerPosts';
-import SettingsPage from './pages/settings/Settings';
-import PostView from './pages/post/PostView';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
+import { AuthProvider } from '@/hooks/use-auth';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from '@/components/ui/layout';
+import Index from '@/pages/Index';
+import FreelancerApplication from '@/pages/freelancer-application';
+import Login from '@/pages/login';
+import AdminDashboard from '@/pages/admin/dashboard';
+import AdminRoute from '@/components/routes/admin-route';
+import GuestRoute from '@/components/routes/guest-route';
+import UserProfile from '@/pages/profile';
+import AuthRoute from './components/routes/auth-route';
+import FreelancerPosts from './pages/freelancer/posts';
+import FreelancerPost from './pages/freelancer/post';
+import Post from './pages/post';
+import Messages from './pages/messages';
+import Conversation from './pages/conversation';
+
+const queryClient = new QueryClient();
 
 function App() {
-  const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <AuthProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Index />} />
+                <Route path="/freelancer-application" element={<AuthRoute><FreelancerApplication /></AuthRoute>} />
+                <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+                <Route path="/profile/:username" element={<UserProfile />} />
+                <Route path="/freelancer/posts" element={<AuthRoute><FreelancerPosts /></AuthRoute>} />
+                <Route path="/freelancer/post/:id" element={<AuthRoute><FreelancerPost /></AuthRoute>} />
+                <Route path="/post/:id" element={<Post />} />
+                <Route path="/messages" element={<AuthRoute><Messages /></AuthRoute>} />
+                <Route path="/messages/:conversationId" element={<AuthRoute><Conversation /></AuthRoute>} />
+                <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              </Route>
+            </Routes>
+          </Router>
+        </AuthProvider>
         <Toaster />
-        <Router>
-          <Routes>
-            <Route element={<Layout navItems={navItems} />}>
-              <Route index element={<Index />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/freelancer/apply" element={<Apply />} />
-              <Route path="/freelancer/posts" element={<FreelancerPosts />} />
-              <Route path="/freelancer/posts/new" element={<PostEditor />} />
-              <Route path="/freelancer/posts/:id/edit" element={<PostEditor />} />
-              <Route path="/post/:id" element={<PostView />} />
-              <Route path="/application" element={<Application />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/applications" element={<FreelancerApplications />} />
-            </Route>
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        </Router>
       </TooltipProvider>
     </QueryClientProvider>
   );
 }
+
 export default App;
