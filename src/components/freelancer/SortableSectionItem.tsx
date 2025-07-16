@@ -126,11 +126,11 @@ export function SortableSectionItem({ section, onUpdate, onRemove }: SortableSec
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between p-2 bg-muted/50 border-b">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+            <Button variant="ghost" size="icon" {...listeners} className="cursor-grab active:cursor-grabbing">
               <GripVertical className="h-5 w-5" />
             </Button>
             {section.type === 'markdown' ? <FileText className="h-5 w-5 text-muted-foreground" /> : <ImageIcon className="h-5 w-5 text-muted-foreground" />}
