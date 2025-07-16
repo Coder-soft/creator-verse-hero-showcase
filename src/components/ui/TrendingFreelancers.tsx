@@ -1,6 +1,10 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+=======
+import React, { useState, useEffect } from 'react';
+>>>>>>> Stashed changes
 =======
 import React, { useState, useEffect } from 'react';
 >>>>>>> Stashed changes
@@ -10,6 +14,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Star, Loader2 } from 'lucide-react';
 import { Button } from './button';
 import { supabase } from '@/integrations/supabase/client';
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
 interface FreelancerCard {
@@ -58,6 +63,10 @@ const placeholderAvatar = '/placeholder.svg';
 =======
 import { Link } from 'react-router-dom';
 
+=======
+import { Link } from 'react-router-dom';
+
+>>>>>>> Stashed changes
 interface Freelancer {
   user_id: string;
   display_name: string;
@@ -72,6 +81,9 @@ const getInitials = (name?: string) => {
   if (!name) return "U";
   return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 };
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 const cardVariants = {
@@ -87,6 +99,7 @@ const cardVariants = {
 };
 
 export function TrendingFreelancers() {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
   const navigate = useNavigate();
   const [freelancers, setFreelancers] = useState<FreelancerCard[]>([]);
@@ -145,6 +158,8 @@ export function TrendingFreelancers() {
 
     fetchFreelancers();
 =======
+=======
+>>>>>>> Stashed changes
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,6 +189,9 @@ export function TrendingFreelancers() {
     };
 
     fetchTrendingFreelancers();
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   }, []);
 
@@ -186,6 +204,7 @@ export function TrendingFreelancers() {
             Meet our top-rated freelancers who are making waves with their exceptional skills and client satisfaction.
           </p>
         </div>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {freelancers.length > 0 ? (
@@ -233,6 +252,8 @@ export function TrendingFreelancers() {
             <p>No freelancers found.</p>
           )}
 =======
+=======
+>>>>>>> Stashed changes
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
