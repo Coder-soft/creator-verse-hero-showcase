@@ -47,7 +47,7 @@ export function Navbar() {
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="mr-4 hidden md:flex">
           <Link to="/" className="mr-6 flex items-center space-x-2">
-            <img src="https://i.ibb.co/yWc8nK7/creators-market-icon.png" alt="Creators Market Logo" className="h-8 w-8" />
+            <img src="/favicon.ico" alt="Creators Market Logo" className="h-8 w-8" />
             <span className="font-bold sm:inline-block">
               Creators Market
             </span>
@@ -132,7 +132,7 @@ export function Navbar() {
             <SheetContent side="left">
               <SheetHeader>
                 <Link to="/" className="flex items-center" onClick={() => setOpen(false)}>
-                  <img src="https://i.ibb.co/yWc8nK7/creators-market-icon.png" alt="Creators Market Logo" className="h-8 w-8" />
+                  <img src="/favicon.ico" alt="Creators Market Logo" className="h-8 w-8" />
                   <span className="ml-2 font-bold">Creators Market</span>
                 </Link>
               </SheetHeader>
