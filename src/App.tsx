@@ -13,6 +13,7 @@ import FreelancerApplication from "./pages/FreelancerApplication";
 import Marketplace from "./pages/Marketplace";
 import FreelancerPostsManager from "./pages/FreelancerPostsManager";
 import FreelancerPostCreate from "./pages/FreelancerPostCreate";
+import FreelancerProfile from "./pages/FreelancerProfile";
 import PostDetails from "./pages/PostDetails";
 import DbSetup from "./pages/DbSetup";
 import Messaging from "./pages/Messaging";
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/marketplace/post/:id" element={<PostDetails />} />
+<Route path="/freelancer/:id" element={<FreelancerProfile />} />
                 
                 {/* Protected Routes - Require Authentication */}
                 <Route path="/profile" element={<Profile />} />

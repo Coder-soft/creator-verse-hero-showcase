@@ -1,11 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 import { Button } from './button';
+import { supabase } from '@/integrations/supabase/client';
 
-const freelancers = [
+interface FreelancerCard {
+  id: string;
+  name: string;
+  avatar: string;
+  title?: string;
+  rating: number;
+  reviews: number;
+  skills: string[];
+}
+
+const placeholderAvatar = '/placeholder.svg';
+
+/* STATIC PLACEHOLDER DATA (disabled after migration to dynamic fetch)
+
+
   {
     id: 1,
     name: 'Elena Rodriguez',
@@ -32,8 +48,8 @@ const freelancers = [
     rating: 5.0,
     reviews: 210,
     skills: ['SEO', 'Copywriting', 'Marketing'],
-  },
-];
+*/
+
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -48,6 +64,64 @@ const cardVariants = {
 };
 
 export function TrendingFreelancers() {
+  const navigate = useNavigate();
+  const [freelancers, setFreelancers] = useState<FreelancerCard[]>([]);
+
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, username, avatar_url, role')
+          .eq('role', 'freelancer')
+          .limit(6);
+
+        if (error) throw error;
+        if (!profiles) return;
+
+        const userIds = profiles.map((p) => p.user_id);
+
+        const { data: reviews, error: revError } = await supabase
+          .from('freelancer_post_reviews')
+          .select('rating, post:freelancer_posts(user_id)')
+          .in('post.user_id', userIds);
+
+        if (revError) console.warn(revError);
+
+        const ratingMap = new Map<string, { sum: number; count: number }>();
+        type ReviewRow = { rating: number; post?: { user_id?: string } };
+        reviews?.forEach((r: ReviewRow) => {
+          const uid = r.post?.user_id;
+          if (!uid) return;
+          const entry = ratingMap.get(uid) || { sum: 0, count: 0 };
+          entry.sum += r.rating;
+          entry.count += 1;
+          ratingMap.set(uid, entry);
+        });
+
+        const cards: FreelancerCard[] = profiles.map((p) => {
+          const ratingInfo = ratingMap.get(p.user_id) || { sum: 0, count: 0 };
+          const avg = ratingInfo.count ? ratingInfo.sum / ratingInfo.count : 0;
+          return {
+            id: p.user_id,
+            name: p.display_name || p.username || 'Freelancer',
+            avatar: p.avatar_url || placeholderAvatar,
+            title: 'Freelancer',
+            rating: Number(avg.toFixed(1)),
+            reviews: ratingInfo.count,
+            skills: [],
+          };
+        });
+
+        setFreelancers(cards);
+      } catch (err) {
+        console.error('Error fetching freelancers', err);
+      }
+    };
+
+    fetchFreelancers();
+  }, []);
+
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -94,7 +168,7 @@ export function TrendingFreelancers() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" className="w-full">View Profile</Button>
+                    <Button variant="outline" className="w-full" onClick={() => navigate(`/freelancer/${freelancer.id}`)}>View Profile</Button>
                   </CardFooter>
                 </Card>
               </motion.div>
