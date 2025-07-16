@@ -20,6 +20,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TablesUpdate } from "@/integrations/supabase/types";
 import { SectionEditor, Section } from './SectionEditor';
 import { v4 as uuidv4 } from 'uuid';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableFormSection } from './SortableFormSection';
 
 interface PostEditorProps {
   postId?: string; // Optional for editing existing post
@@ -37,13 +40,12 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const [price, setPrice] = useState<string>("");
   const [sections, setSections] = useState<Section[]>([]);
 
-  // Packages state
   type PackageTier = "basic" | "gold" | "platinum";
   interface PackageInfo {
     title: string;
     description: string;
-    price: string; // keep as string for input control
-    deliveryTime: string; // days
+    price: string;
+    deliveryTime: string;
   }
 
   const [packagesState, setPackagesState] = useState<Record<PackageTier, PackageInfo>>({
@@ -57,7 +59,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const [postImage, setPostImage] = useState<File | null>(null);
   const [postImageUrl, setPostImageUrl] = useState<string>("");
 
-  // Freelancer profile fields
   const { profile, refreshProfile } = useAuth();
   const [displayName, setDisplayName] = useState<string>(profile?.display_name || "");
   const [location, setLocation] = useState<string>(profile?.location || "");
@@ -66,7 +67,15 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>(profile?.avatar_url || "");
 
-  // Available categories
+  const [sectionOrder, setSectionOrder] = useState<string[]>([
+    'title',
+    'category',
+    'images',
+    'price',
+    'packages',
+    'content'
+  ]);
+
   const categories = [
     "Design", 
     "Development", 
@@ -99,7 +108,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         if (post.sections && Array.isArray(post.sections)) {
           setSections(post.sections as Section[]);
         } else if (post.content) {
-          // Migrate from old content field
           setSections([{ id: uuidv4(), type: 'markdown', content: post.content }]);
         }
 
@@ -275,7 +283,7 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         packages: JSON.stringify(packagesState),
         title,
         sections,
-        content: sections.map(s => s.content).join('\n\n'), // For compatibility and search
+        content: sections.map(s => s.content).join('\n\n'),
         price: price ? parseFloat(price) : null,
         category,
         cover_image_url: finalCoverImageUrl,
@@ -338,6 +346,129 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     }
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setSectionOrder((items) => {
+        const oldIndex = items.indexOf(active.id as string);
+        const newIndex = items.indexOf(over.id as string);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
+
+  const sectionComponents: Record<string, { title: string; component: React.ReactNode }> = {
+    title: {
+      title: 'Post Title',
+      component: (
+        <div className="space-y-2">
+          <Label htmlFor="title">Title</Label>
+          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter a catchy title" />
+        </div>
+      )
+    },
+    category: {
+      title: 'Category',
+      component: (
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}
+            </SelectContent>
+          </Select>
+        </div>
+      )
+    },
+    images: {
+      title: 'Images',
+      component: (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="coverImage">Cover Image</Label>
+            <div className="border border-dashed border-border rounded-lg p-4 text-center">
+              {coverImageUrl ? (
+                <div className="relative">
+                  <img src={coverImageUrl} alt="Cover preview" className="mx-auto max-h-40 object-contain mb-2" />
+                  <Button variant="outline" size="sm" onClick={() => { setCoverImage(null); setCoverImageUrl(""); }} className="mt-2">Remove</Button>
+                </div>
+              ) : (
+                <>
+                  <ImagePlus className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground mb-2">Upload a cover image</p>
+                  <Input id="coverImage" type="file" accept="image/*" onChange={handleCoverImageChange} className="hidden" />
+                  <Button variant="outline" onClick={() => document.getElementById("coverImage")?.click()}>Select Image</Button>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="postImage">Post Image</Label>
+            <div className="border border-dashed border-border rounded-lg p-4 text-center">
+              {postImageUrl ? (
+                <div className="relative">
+                  <img src={postImageUrl} alt="Post image preview" className="mx-auto max-h-40 object-contain mb-2" />
+                  <Button variant="outline" size="sm" onClick={() => { setPostImage(null); setPostImageUrl(""); }} className="mt-2">Remove</Button>
+                </div>
+              ) : (
+                <>
+                  <ImagePlus className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground mb-2">Upload a main image</p>
+                  <Input id="postImage" type="file" accept="image/*" onChange={handlePostImageChange} className="hidden" />
+                  <Button variant="outline" onClick={() => document.getElementById("postImage")?.click()}>Select Image</Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    price: {
+      title: 'General Price',
+      component: (
+        <div className="space-y-2">
+          <Label htmlFor="price">General Price (optional if using packages)</Label>
+          <div className="relative">
+            <DollarSign className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input id="price" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" className="pl-10" />
+          </div>
+        </div>
+      )
+    },
+    packages: {
+      title: 'Service Packages',
+      component: (
+        <div className="space-y-4">
+          {(["basic", "gold", "platinum"] as PackageTier[]).map((tier) => (
+            <Card key={tier} className="p-4 bg-background">
+              <CardHeader className="p-0 mb-4"><CardTitle className="capitalize text-primary">{packagesState[tier].title || tier}</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 p-0">
+                <div className="space-y-2"><Label>Title</Label><Input value={packagesState[tier].title} onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], title: e.target.value } }))} placeholder="Package title" /></div>
+                <div className="space-y-2"><Label>Price</Label><Input type="number" min="0" step="0.01" value={packagesState[tier].price} onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], price: e.target.value } }))} placeholder="0.00" /></div>
+                <div className="space-y-2"><Label>Delivery Time (days)</Label><Input type="number" min="1" value={packagesState[tier].deliveryTime} onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], deliveryTime: e.target.value } }))} placeholder="3" /></div>
+                <div className="col-span-full space-y-2"><Label>Description</Label><Textarea value={packagesState[tier].description} onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], description: e.target.value } }))} placeholder="Describe what is included" /></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )
+    },
+    content: {
+      title: 'Post Content',
+      component: (
+        <SectionEditor sections={sections} setSections={setSections} />
+      )
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -350,222 +481,32 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     <div className="grid lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
         <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{postId ? "Edit Post" : "Create New Post"}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Input 
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter a catchy title"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Select
-            value={category}
-            onValueChange={setCategory}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="coverImage">Cover Image</Label>
-            <div className="border border-dashed border-border rounded-lg p-4 text-center">
-              {coverImageUrl ? (
-                <div className="relative">
-                  <img 
-                    src={coverImageUrl} 
-                    alt="Cover preview" 
-                    className="mx-auto max-h-40 object-contain mb-2" 
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setCoverImage(null);
-                      setCoverImageUrl("");
-                    }}
-                    className="mt-2"
-                  >
-                    Remove
-                  </Button>
+          <CardHeader>
+            <CardTitle>{postId ? "Edit Post" : "Create New Post"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
+                <div className="space-y-4">
+                  {sectionOrder.map((sectionId) => (
+                    <SortableFormSection key={sectionId} id={sectionId} title={sectionComponents[sectionId].title}>
+                      {sectionComponents[sectionId].component}
+                    </SortableFormSection>
+                  ))}
                 </div>
-              ) : (
-                <>
-                  <ImagePlus className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Upload a cover image for your post
-                  </p>
-                  <Input
-                    id="coverImage"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCoverImageChange}
-                    className="hidden"
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => document.getElementById("coverImage")?.click()}
-                  >
-                    Select Image
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="postImage">Post Image</Label>
-            <div className="border border-dashed border-border rounded-lg p-4 text-center">
-              {postImageUrl ? (
-                <div className="relative">
-                  <img 
-                    src={postImageUrl} 
-                    alt="Post image preview" 
-                    className="mx-auto max-h-40 object-contain mb-2" 
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setPostImage(null);
-                      setPostImageUrl("");
-                    }}
-                    className="mt-2"
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <ImagePlus className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Upload a main image for your post
-                  </p>
-                  <Input
-                    id="postImage"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePostImageChange}
-                    className="hidden"
-                  />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => document.getElementById("postImage")?.click()}
-                  >
-                    Select Image
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="price">General Price (optional if using packages)</Label>
-          <div className="relative">
-            <DollarSign className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="0.00"
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Packages</h3>
-          {(["basic", "gold", "platinum"] as PackageTier[]).map((tier) => (
-            <Card key={tier} className="p-4">
-              <CardHeader className="p-0 mb-4">
-                <CardTitle className="capitalize text-primary">{tier}</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 p-0">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={packagesState[tier].title}
-                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], title: e.target.value } }))}
-                    placeholder="Package title"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Price</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={packagesState[tier].price}
-                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], price: e.target.value } }))}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Delivery Time (days)</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={packagesState[tier].deliveryTime}
-                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], deliveryTime: e.target.value } }))}
-                    placeholder="3"
-                  />
-                </div>
-                <div className="col-span-full space-y-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    value={packagesState[tier].description}
-                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], description: e.target.value } }))}
-                    placeholder="Describe what is included in this package"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="space-y-2">
-          <Label>Content</Label>
-          <SectionEditor sections={sections} setSections={setSections} />
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={saveAsDraft}
-          disabled={saving}
-        >
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-          Save as Draft
-        </Button>
-        <Button
-          onClick={publishPost}
-          disabled={saving}
-        >
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-          Publish Post
-        </Button>
-      </CardFooter>
+              </SortableContext>
+            </DndContext>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={saveAsDraft} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Save as Draft
+            </Button>
+            <Button onClick={publishPost} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Publish Post
+            </Button>
+          </CardFooter>
         </Card>
       </div>
 
