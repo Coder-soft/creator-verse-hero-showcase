@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PostEditor } from "@/components/freelancer/PostEditor";
 import { Badge } from "@/components/ui/badge";
+import { PostCardSkeleton } from "@/components/marketplace/PostCardSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Post {
   id: string;
@@ -163,8 +165,20 @@ export default function FreelancerPostsManager() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20">
-          <div className="flex justify-center items-center min-h-[60vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
+              <div>
+                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-4 w-64 mt-2" />
+              </div>
+              <Skeleton className="h-10 w-36 mt-4 md:mt-0" />
+            </div>
+            <Skeleton className="h-10 w-full max-w-md mb-8" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <PostCardSkeleton key={i} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -205,7 +219,7 @@ export default function FreelancerPostsManager() {
           {filteredPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPosts.map((post) => (
-                <Card key={post.id} className="overflow-hidden">
+                <Card key={post.id} className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1">
                   <div className="h-40 bg-muted relative">
                     {post.cover_image_url ? (
                       <img 
@@ -332,4 +346,4 @@ export default function FreelancerPostsManager() {
       </AlertDialog>
     </div>
   );
-} 
+}

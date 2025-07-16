@@ -21,6 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Section } from "@/components/freelancer/SectionEditor";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Post {
   id: string;
@@ -266,8 +267,55 @@ export default function PostDetails() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-20">
-          <div className="flex justify-center items-center min-h-[60vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12">
+              {/* Left Column Skeleton */}
+              <div className="lg:col-span-1">
+                <Card className="sticky top-24">
+                  <CardHeader>
+                    <div className="flex flex-col items-center text-center">
+                      <Skeleton className="h-24 w-24 rounded-full mb-4" />
+                      <Skeleton className="h-6 w-3/4" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Separator className="my-4" />
+                    <div className="space-y-2 mt-4">
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Skeleton className="h-10 w-full" />
+                  </CardFooter>
+                </Card>
+              </div>
+              {/* Right Column Skeleton */}
+              <div className="lg:col-span-2 space-y-8">
+                <Skeleton className="h-6 w-1/4" />
+                <Skeleton className="h-10 w-3/4" />
+                <Skeleton className="h-6 w-1/5" />
+                <Skeleton className="aspect-video w-full rounded-lg" />
+                <Card>
+                  <CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><Skeleton className="h-8 w-1/3" /></CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>

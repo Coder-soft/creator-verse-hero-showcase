@@ -29,6 +29,8 @@ import { CheckCircle, XCircle, UserCog, Eye, Loader2, PencilLine, Trash2, Link a
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TableSkeleton } from '@/components/admin/TableSkeleton';
 
 interface User {
   id: string;
@@ -257,7 +259,27 @@ export default function AdminPage() {
   const questionsMap = new Map(questions.map(q => [q.id, q]));
 
   if (loadingUsers || loadingApplications || loadingQuestions) {
-    return <div className="container max-w-6xl mx-auto py-8 px-4 flex justify-center items-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="container max-w-6xl mx-auto py-8 px-4">
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-72 mt-2" />
+              </div>
+              <Skeleton className="h-10 w-36" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full max-w-lg" />
+              <TableSkeleton />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

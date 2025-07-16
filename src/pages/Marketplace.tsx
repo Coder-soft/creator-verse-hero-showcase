@@ -4,10 +4,11 @@ import { Navbar } from "@/components/ui/navbar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowDownAZ, Star, Loader2 } from "lucide-react";
+import { Sparkles, ArrowDownAZ, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MarketplaceSearchBar } from "@/components/marketplace/MarketplaceSearchBar";
+import { PostCardSkeleton } from "@/components/marketplace/PostCardSkeleton";
 
 interface Post {
   id: string;
@@ -229,13 +230,15 @@ export default function Marketplace() {
             
             <TabsContent value="all" className="mt-6">
               {loading ? (
-                <div className="flex justify-center items-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <PostCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : posts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {posts.map((post) => (
-                    <Card key={post.id} className="shadow-sm hover:shadow-md transition-shadow">
+                    <Card key={post.id} className="shadow-sm hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1">
                       {post.cover_image_url && (
                         <div className="w-full h-40 overflow-hidden">
                           <img 
