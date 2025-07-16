@@ -26,7 +26,7 @@ export async function checkRequiredTables(): Promise<TableCheckResult[]> {
     try {
       // Try to select a single row from the table to check if it exists
       const { data, error } = await supabase
-        .from(table)
+        .from(table as any)
         .select('*')
         .limit(1);
       

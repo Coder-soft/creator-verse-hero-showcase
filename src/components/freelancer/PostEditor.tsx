@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { TablesUpdate } from "@/integrations/supabase/types";
+import { TablesUpdate, Json } from "@/integrations/supabase/types";
 import { SectionEditor } from './SectionEditor';
 import { Section } from './types';
 import { v4 as uuidv4 } from 'uuid';
@@ -116,7 +116,7 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         setPostImageUrl(post.image_url || "");
 
         if (post.sections && Array.isArray(post.sections)) {
-          setSections(post.sections as Section[]);
+          setSections(post.sections as unknown as Section[]);
         } else if (post.content) {
           setSections([{ id: uuidv4(), type: 'markdown', content: post.content }]);
         }
@@ -302,7 +302,7 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       const postData = {
         packages: JSON.stringify(packagesState),
         title,
-        sections,
+        sections: sections as unknown as Json,
         content: sections.map(s => s.content).join('\n\n'),
         price: price ? parseFloat(price) : null,
         category,
@@ -313,7 +313,7 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         form_layout: {
           titles: sectionTitles,
           order: sectionOrder
-        }
+        } as unknown as Json
       };
 
       let result;

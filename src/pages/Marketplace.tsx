@@ -58,15 +58,14 @@ const renderStars = (rating?: number) => {
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.5,
-      ease: "easeOut",
-    },
-  }),
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.5, 
+      ease: "easeOut" as const
+    } 
+  },
 };
 
 export default function Marketplace() {
@@ -261,13 +260,12 @@ export default function Marketplace() {
                 ) : posts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {posts.map((post, i) => (
-                      <motion.div
-                        key={post.id}
-                        custom={i}
-                        variants={cardVariants}
-                        initial="hidden"
-                        animate="visible"
-                        whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                        <motion.div
+                          key={post.id}
+                          initial="hidden"
+                          animate="visible"
+                          variants={cardVariants}
+                          whileHover={{ y: -5, transition: { duration: 0.2 } }}
                       >
                         <Card className="shadow-sm hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1 h-full flex flex-col">
                           {post.cover_image_url && (

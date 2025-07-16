@@ -59,9 +59,7 @@ export function ConversationList({ onSelectConversation, selectedConversationId 
         .from("conversations")
         .select(`
           *,
-          post:freelancer_posts!conversations_post_id_fkey (title),
-          buyer_profile:profiles!conversations_buyer_id_fkey (username, display_name, avatar_url),
-          freelancer_profile:profiles!conversations_freelancer_id_fkey (username, display_name, avatar_url)
+          post:freelancer_posts (title)
         `);
       
       if (userRole === 'buyer') {

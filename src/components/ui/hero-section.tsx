@@ -1,81 +1,58 @@
+"use client";
+
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Briefcase } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function HeroSection() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-      },
-    },
-  };
-
   return (
     <section className="relative w-full py-24 md:py-32 lg:py-40 overflow-hidden">
-      {/* Animated background blobs */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-blob"></div>
-        <div className="absolute top-1/2 right-1/4 w-72 h-72 bg-secondary/10 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
-      </div>
+      {/* Animated Blobs */}
+      <div className="absolute top-0 -left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-blob"></div>
+      <div className="absolute top-0 -right-1/4 w-96 h-96 bg-secondary/10 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+      <div className="absolute -bottom-1/4 left-1/3 w-96 h-96 bg-accent/10 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
 
-      <div className="container mx-auto px-4 text-center">
+      <div className="container mx-auto px-4 md:px-6 text-center relative z-10">
         <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-3xl mx-auto flex flex-col items-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-3xl mx-auto"
         >
-          <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm font-medium text-primary mb-4"
+          <motion.h1 
+            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           >
-            <Sparkles className="h-4 w-4 mr-2 text-primary" />
-            <span>Unleash Your Creative Potential</span>
-          </motion.div>
-
-          <motion.h1
-            variants={itemVariants}
-            className="text-4xl md:text-6xl font-bold tracking-tight text-foreground"
-          >
-            Where Creators Thrive & Businesses Grow
+            Find Your Creative Spark.
+            <br />
+            Hire Your Perfect Talent.
           </motion.h1>
-
-          <motion.p
-            variants={itemVariants}
-            className="mt-6 text-lg text-muted-foreground max-w-xl"
+          <motion.p 
+            className="text-lg md:text-xl text-muted-foreground mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
           >
-            Creators Market is the premier platform connecting innovative freelancers with businesses seeking top-tier creative talent.
+            Creators Market is the premier destination for discovering and hiring top-tier creative professionals from around the globe.
           </motion.p>
-
-          <motion.div
-            variants={itemVariants}
-            className="mt-10 flex flex-col sm:flex-row gap-4"
+          <motion.div 
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
           >
             <Link to="/marketplace">
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto group hover-lift">
                 Explore Marketplace
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link to="/auth">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+            <Link to="/freelancer-application">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto group hover-lift">
+                <Briefcase className="h-5 w-5 mr-2 transition-transform group-hover:rotate-[-5deg]" />
                 Become a Freelancer
               </Button>
             </Link>

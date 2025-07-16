@@ -92,7 +92,7 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
     try {
       const { data, error } = await supabase
         .from("messages")
-        .select("*, sender_profile:profiles!messages_sender_id_fkey(username, display_name, avatar_url)")
+        .select("*")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
       
@@ -113,9 +113,7 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
         .from("conversations")
         .select(`
           *,
-          post:freelancer_posts!conversations_post_id_fkey (title),
-          buyer_profile:profiles!conversations_buyer_id_fkey (username, display_name, avatar_url),
-          freelancer_profile:profiles!conversations_freelancer_id_fkey (username, display_name, avatar_url)
+          post:freelancer_posts (title)
         `)
         .eq("id", id)
         .single();
@@ -124,22 +122,28 @@ export function MessageChat({ conversationId, postId, freelancerId, onClose }: M
       
       setConversation(conversationData);
       
+      // Get profile data for both users
+      const [{ data: buyerProfile }, { data: freelancerProfile }] = await Promise.all([
+        supabase.from("profiles").select("username, display_name, avatar_url").eq("user_id", conversationData.buyer_id).single(),
+        supabase.from("profiles").select("username, display_name, avatar_url").eq("user_id", conversationData.freelancer_id).single()
+      ]);
+
       // Determine the other user in the conversation
       const isUserBuyer = conversationData.buyer_id === user?.id;
       const otherUserData = isUserBuyer 
         ? {
             id: conversationData.freelancer_id,
-            displayName: conversationData.freelancer_profile?.display_name || 
-                        conversationData.freelancer_profile?.username || 
+            displayName: freelancerProfile?.display_name || 
+                        freelancerProfile?.username || 
                         "Freelancer",
-            avatarUrl: conversationData.freelancer_profile?.avatar_url
+            avatarUrl: freelancerProfile?.avatar_url
           }
         : {
             id: conversationData.buyer_id,
-            displayName: conversationData.buyer_profile?.display_name || 
-                        conversationData.buyer_profile?.username || 
+            displayName: buyerProfile?.display_name || 
+                        buyerProfile?.username || 
                         "Buyer",
-            avatarUrl: conversationData.buyer_profile?.avatar_url
+            avatarUrl: buyerProfile?.avatar_url
           };
       
       setOtherUser(otherUserData);

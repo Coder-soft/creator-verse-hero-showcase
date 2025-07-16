@@ -100,7 +100,7 @@ export default function AdminPage() {
       // Fetch questions first
       const { data: questionsData, error: questionsError } = await supabase.from('freelancer_questions').select('*').order('order_position', { ascending: true });
       if (questionsError) throw questionsError;
-      setQuestions(questionsData || []);
+      setQuestions((questionsData || []) as Question[]);
       setLoadingQuestions(false);
 
       // Fetch users
@@ -224,7 +224,7 @@ export default function AdminPage() {
       const { data, error } = await supabase.from('freelancer_questions').insert({ ...newQuestion, order_position: highestPosition + 1 }).select('*').single();
       if (error) throw error;
       toast({ title: 'Question Created', description: 'The new question has been added.' });
-      setQuestions([...questions, data]);
+      setQuestions([...questions, data as Question]);
       setNewQuestion({ question: '', required: true, type: 'text' });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to create question', variant: 'destructive' });

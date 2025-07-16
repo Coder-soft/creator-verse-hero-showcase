@@ -104,12 +104,11 @@ export default function PostDetails() {
         console.warn("Could not fetch freelancer profile:", profileError);
       }
 
-      const postWithProfile = {
+      setPost({
         ...postData,
-        profiles: profileData || undefined
-      };
-      
-      setPost(postWithProfile);
+        profiles: profileData || undefined,
+        packages: typeof postData.packages === 'string' ? postData.packages : JSON.stringify(postData.packages)
+      } as any);
       
       const { data: reviewsData, error: reviewsError } = await supabase
         .from("freelancer_post_reviews")
@@ -271,8 +270,8 @@ export default function PostDetails() {
   };
 
   const pageTransition = {
-    type: "tween",
-    ease: "anticipate",
+    type: "tween" as const,
+    ease: "anticipate" as const,
     duration: 0.5,
   };
 

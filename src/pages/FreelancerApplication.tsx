@@ -71,7 +71,7 @@ export default function FreelancerApplication() {
         .order('order_position', { ascending: true });
       
       if (questionsError) throw questionsError;
-      setQuestions(questionsData || []);
+      setQuestions((questionsData || []) as Question[]);
 
       const { data: applications, error: appError } = await supabase
         .from('freelancer_applications')

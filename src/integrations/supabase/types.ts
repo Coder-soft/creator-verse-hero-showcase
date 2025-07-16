@@ -14,84 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
-      analytics: {
-        Row: {
-          created_at: string | null
-          event_type: string
-          id: string
-          page_id: string | null
-          referrer: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          event_type: string
-          id?: string
-          page_id?: string | null
-          referrer?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          event_type?: string
-          id?: string
-          page_id?: string | null
-          referrer?: string | null
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "analytics_page_id_fkey"
-            columns: ["page_id"]
-            isOneToOne: false
-            referencedRelation: "pages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       conversations: {
         Row: {
           buyer_id: string
-          created_at: string | null
+          created_at: string
           freelancer_id: string
           id: string
           last_message_at: string | null
           post_id: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           buyer_id: string
-          created_at?: string | null
+          created_at?: string
           freelancer_id: string
           id?: string
           last_message_at?: string | null
           post_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           buyer_id?: string
-          created_at?: string | null
+          created_at?: string
           freelancer_id?: string
           id?: string
           last_message_at?: string | null
           post_id?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "conversations_buyer_id_fkey"
-            columns: ["buyer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "conversations_freelancer_id_fkey"
-            columns: ["freelancer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
           {
             foreignKeyName: "conversations_post_id_fkey"
             columns: ["post_id"]
@@ -105,26 +56,26 @@ export type Database = {
         Row: {
           answer: string | null
           application_id: string
-          created_at: string | null
+          created_at: string
           id: string
           question_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           answer?: string | null
           application_id: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           question_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           answer?: string | null
           application_id?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           question_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -145,33 +96,33 @@ export type Database = {
       }
       freelancer_applications: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           reviewed_at: string | null
           reviewed_by: string | null
           status: string | null
           submitted_at: string | null
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
           submitted_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string | null
           submitted_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -179,29 +130,29 @@ export type Database = {
       freelancer_post_reviews: {
         Row: {
           comment: string | null
-          created_at: string | null
+          created_at: string
           id: string
           post_id: string
           rating: number
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
           comment?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           post_id: string
           rating: number
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
           comment?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           post_id?: string
           rating?: number
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -212,13 +163,6 @@ export type Database = {
             referencedRelation: "freelancer_posts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "freelancer_post_reviews_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       freelancer_posts: {
@@ -226,75 +170,79 @@ export type Database = {
           category: string | null
           content: string
           cover_image_url: string | null
-          created_at: string | null
+          created_at: string
+          form_layout: Json | null
           id: string
           image_url: string | null
+          packages: Json | null
           price: number
+          sections: Json | null
           status: string | null
           title: string
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
           category?: string | null
           content: string
           cover_image_url?: string | null
-          created_at?: string | null
+          created_at?: string
+          form_layout?: Json | null
           id?: string
           image_url?: string | null
+          packages?: Json | null
           price: number
+          sections?: Json | null
           status?: string | null
           title: string
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
           category?: string | null
           content?: string
           cover_image_url?: string | null
-          created_at?: string | null
+          created_at?: string
+          form_layout?: Json | null
           id?: string
           image_url?: string | null
+          packages?: Json | null
           price?: number
+          sections?: Json | null
           status?: string | null
           title?: string
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "freelancer_posts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       freelancer_questions: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           order_position: number
           question: string
           required: boolean | null
-          updated_at: string | null
+          type: string
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           order_position: number
           question: string
           required?: boolean | null
-          updated_at?: string | null
+          type?: string
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           order_position?: number
           question?: string
           required?: boolean | null
-          updated_at?: string | null
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -302,29 +250,29 @@ export type Database = {
         Row: {
           content: string
           conversation_id: string
-          created_at: string | null
+          created_at: string
           id: string
           read: boolean | null
           sender_id: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           content: string
           conversation_id: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           read?: boolean | null
           sender_id: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           content?: string
           conversation_id?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           read?: boolean | null
           sender_id?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -334,97 +282,7 @@ export type Database = {
             referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
         ]
-      }
-      page_sections: {
-        Row: {
-          content: Json
-          created_at: string
-          id: string
-          page_id: string
-          position: number
-          section_id: string
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          content?: Json
-          created_at?: string
-          id?: string
-          page_id: string
-          position?: number
-          section_id: string
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          content?: Json
-          created_at?: string
-          id?: string
-          page_id?: string
-          position?: number
-          section_id?: string
-          type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "page_sections_page_id_fkey"
-            columns: ["page_id"]
-            isOneToOne: false
-            referencedRelation: "pages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pages: {
-        Row: {
-          cover_image_url: string | null
-          created_at: string
-          description: string | null
-          id: string
-          is_published: boolean
-          likes: number
-          slug: string
-          theme: Json | null
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          cover_image_url?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_published?: boolean
-          likes?: number
-          slug: string
-          theme?: Json | null
-          title?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          cover_image_url?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_published?: boolean
-          likes?: number
-          slug?: string
-          theme?: Json | null
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -476,10 +334,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      increment_likes: {
-        Args: { page_id_to_update: string }
-        Returns: undefined
-      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
