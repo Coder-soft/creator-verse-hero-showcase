@@ -30,11 +30,44 @@ interface Post {
   };
   average_rating?: number;
   review_count?: number;
+  freelancer_post_reviews?: { rating: number }[];
 }
 
 interface Review {
   rating: number;
 }
+
+const getInitials = (name?: string) => {
+  if (!name) return "U";
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+};
+
+const renderStars = (rating?: number) => {
+  const roundedRating = Math.round(rating || 0);
+  return (
+    <div className="flex">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`h-3 w-3 ${star <= roundedRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+        />
+      ))}
+    </div>
+  );
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.5,
+      ease: "easeOut",
+    },
+  }),
+};
 
 export default function Marketplace() {
   const navigate = useNavigate();
@@ -43,23 +76,23 @@ export default function Marketplace() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("recommended");
   const [activeTab, setActiveTab] = useState("all");
-  
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const categories = [
-    "Design", 
-    "Development", 
-    "Writing", 
-    "Video", 
-    "Animation", 
-    "Music", 
+    "Design",
+    "Development",
+    "Writing",
+    "Video",
+    "Animation",
+    "Music",
     "Marketing"
   ];
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
-    
+
     try {
       let query = supabase
         .from('freelancer_posts')
@@ -68,7 +101,7 @@ export default function Marketplace() {
           freelancer_post_reviews (rating)
         `)
         .eq('status', 'published');
-      
+
       if (selectedCategory) {
         query = query.eq('category', selectedCategory);
       }
@@ -79,7 +112,7 @@ export default function Marketplace() {
           config: 'english',
         });
       }
-      
+
       switch (sortBy) {
         case 'newest':
           query = query.order('created_at', { ascending: false });
@@ -98,9 +131,9 @@ export default function Marketplace() {
           // 'recommended' will also be sorted by creation date for now
           query = query.order('created_at', { ascending: false });
       }
-      
+
       const { data: postsData, error } = await query;
-      
+
       if (error) throw error;
 
       if (!postsData || postsData.length === 0) {
@@ -123,14 +156,14 @@ export default function Marketplace() {
       }
 
       const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]));
-      
+
       const processedPosts = postsData.map(post => {
-        const reviews = (post as any).freelancer_post_reviews || [];
+        const reviews = post.freelancer_post_reviews || [];
         const reviewCount = reviews.length;
         const averageRating = reviewCount > 0
           ? reviews.reduce((sum: number, review: Review) => sum + review.rating, 0) / reviewCount
           : 0;
-        
+
         return {
           ...post,
           profiles: profilesMap.get(post.user_id),
@@ -139,11 +172,11 @@ export default function Marketplace() {
           review_count: reviewCount,
         };
       });
-      
+
       if (sortBy === 'rating') {
         processedPosts.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
       }
-      
+
       setPosts(processedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -160,45 +193,13 @@ export default function Marketplace() {
     setSearchQuery(searchTerm);
   };
 
-  const getInitials = (name?: string) => {
-    if (!name) return "U";
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-  };
-
-  const renderStars = (rating?: number) => {
-    const roundedRating = Math.round(rating || 0);
-    return (
-      <div className="flex">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star 
-            key={star}
-            className={`h-3 w-3 ${star <= roundedRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.5,
-        ease: "easeOut",
-      },
-    }),
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-20">
         <HeroSection />
-        
-        <motion.div 
+
+        <motion.div
           className="mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -215,7 +216,7 @@ export default function Marketplace() {
             onSearch={handleSearch}
           />
         </motion.div>
-        
+
         <div className="flex justify-between items-center mb-6">
           <p className="text-sm text-muted-foreground">
             Showing <strong>{posts.length}</strong> services
@@ -241,7 +242,7 @@ export default function Marketplace() {
               Newest
             </TabsTrigger>
           </TabsList>
-          
+
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -271,7 +272,7 @@ export default function Marketplace() {
                         <Card className="shadow-sm hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1 h-full flex flex-col">
                           {post.cover_image_url && (
                             <div className="w-full h-40 overflow-hidden">
-                              <img 
+                              <img
                                 src={post.cover_image_url}
                                 alt={post.title}
                                 className="w-full h-full object-cover"
@@ -304,8 +305,8 @@ export default function Marketplace() {
                           </CardContent>
                           <CardFooter className="flex justify-between pt-2">
                             <span className="font-medium">${post.price.toFixed(2)}</span>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => navigate(`/marketplace/post/${post.id}`)}
                             >
@@ -319,8 +320,8 @@ export default function Marketplace() {
                 ) : (
                   <div className="text-center py-20 border rounded-lg">
                     <p className="text-muted-foreground">No posts found matching your criteria.</p>
-                    <Button 
-                      variant="link" 
+                    <Button
+                      variant="link"
                       onClick={() => {
                         setSearchTerm("");
                         setSearchQuery("");
@@ -332,21 +333,21 @@ export default function Marketplace() {
                   </div>
                 )}
               </TabsContent>
-              
+
               <TabsContent value="featured" className="mt-6">
                 <div className="text-center py-20 border rounded-lg">
                   <Sparkles className="h-10 w-10 mx-auto opacity-50 mb-2" />
                   <p className="text-muted-foreground">Featured freelancers will appear here</p>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="top-rated" className="mt-6">
                 <div className="text-center py-20 border rounded-lg">
                   <Star className="h-10 w-10 mx-auto opacity-50 mb-2" />
                   <p className="text-muted-foreground">Top rated freelancers will appear here</p>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="new" className="mt-6">
                 <div className="text-center py-20 border rounded-lg">
                   <ArrowDownAZ className="h-10 w-10 mx-auto opacity-50 mb-2" />

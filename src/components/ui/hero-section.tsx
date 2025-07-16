@@ -1,82 +1,62 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import ShinyText from "@/components/ui/ShinyText";
 import { motion } from "framer-motion";
-import { ArrowRight, UserPlus } from "lucide-react";
+import { Button } from "./button";
+import { useNavigate } from "react-router-dom";
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-    },
-  },
-};
+export const HeroSection = () => {
+  const navigate = useNavigate();
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-};
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
 
-export function HeroSection() {
   return (
-    <section className="relative w-full py-24 md:py-32 lg:py-40 overflow-hidden">
-      {/* Animated background blobs */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-secondary/20 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
-      </div>
-
-      <div className="container mx-auto px-4 text-center">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-3xl mx-auto"
+    <section className="relative w-full h-[80vh] flex items-center justify-center overflow-hidden bg-gray-900 text-white">
+      <div className="absolute inset-0 w-full h-full bg-transparent z-10" style={{ backgroundImage: 'linear-gradient(to right, rgba(30, 30, 30, 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(30, 30, 30, 0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+      <motion.div
+        className="absolute inset-0 w-full h-full bg-transparent z-10"
+        initial={{ backgroundPosition: "0 0" }}
+        animate={{ backgroundPosition: ["0 0", "40px 40px"] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        style={{ backgroundImage: 'linear-gradient(to right, rgba(50, 50, 50, 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(50, 50, 50, 0.5) 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+      ></motion.div>
+      <div className="relative z-20 text-center p-4">
+        <motion.h1
+          className="text-5xl md:text-7xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500"
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <motion.div variants={itemVariants}>
-            <ShinyText className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Unleash Your Creative Power
-            </ShinyText>
-          </motion.div>
-
-          <motion.p
-            variants={itemVariants}
-            className="mt-6 text-lg md:text-xl text-muted-foreground"
+          Unlock Your Potential
+        </motion.h1>
+        <motion.p
+          className="text-lg md:text-2xl mb-8 max-w-2xl mx-auto text-gray-300"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+        >
+          Discover a world of opportunities and connect with top-tier talent. Your next big project starts here.
+        </motion.p>
+        <motion.div
+          className="flex justify-center gap-4"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.6, ease: "easeOut" }}
+        >
+          <Button
+            onClick={() => handleNavigation("/marketplace")}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
           >
-            Creators Market is the ultimate platform to hire expert freelancers
-            and showcase your own creative services. Find the perfect talent or
-            start earning today.
-          </motion.p>
-
-          <motion.div
-            variants={itemVariants}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+            Find Talent
+          </Button>
+          <Button
+            onClick={() => handleNavigation("/marketplace")}
+            variant="outline"
+            className="border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white font-bold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-300"
           >
-            <Link to="/marketplace">
-              <Button size="lg" className="w-full sm:w-auto">
-                Explore Marketplace
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Become a Freelancer
-              </Button>
-            </Link>
-          </motion.div>
+            Find Work
+          </Button>
         </motion.div>
       </div>
     </section>
   );
-}
+};
