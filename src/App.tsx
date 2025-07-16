@@ -7,7 +7,7 @@ import Layout from '@/components/ui/sidebar';
 import Index from '@/pages/Index';
 import FreelancerApplication from '@/pages/FreelancerApplication';
 import Login from '@/pages/login';
-import AdminDashboard from '@/pages/admin/dashboard';
+import AdminDashboard from '@/pages/Admin';
 import AdminRoute from '@/components/routes/admin-route';
 import GuestRoute from '@/components/routes/guest-route';
 import UserProfile from '@/pages/profile';
@@ -37,7 +37,7 @@ function App() {
                 <Route path="/post/:id" element={<Post />} />
                 <Route path="/messages" element={<AuthRoute><Messages /></AuthRoute>} />
                 <Route path="/messages/:conversationId" element={<AuthRoute><Conversation /></AuthRoute>} />
-                <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin/dashboard" element={<AdminRoute><Admin /></AdminRoute>} />
               </Route>
             </Routes>
           </Router>
