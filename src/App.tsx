@@ -5,7 +5,7 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from '@/components/ui/sidebar';
 import Index from '@/pages/Index';
-import FreelancerApplication from '@/pages/freelancer/application';
+import FreelancerApplication from '@/pages/freelancer-application';
 import Login from '@/pages/login';
 import AdminDashboard from '@/pages/admin/dashboard';
 import AdminRoute from '@/components/routes/admin-route';
