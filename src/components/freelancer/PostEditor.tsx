@@ -76,6 +76,15 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     'content'
   ]);
 
+  const [sectionTitles, setSectionTitles] = useState<Record<string, string>>({
+    title: 'Post Title',
+    category: 'Category',
+    images: 'Images',
+    price: 'General Price',
+    packages: 'Service Packages',
+    content: 'Post Content'
+  });
+
   const categories = [
     "Design", 
     "Development", 
@@ -92,7 +101,7 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     try {
       const { data: post, error } = await supabase
         .from("freelancer_posts")
-        .select("*, sections")
+        .select("*, sections, form_layout")
         .eq("id", id)
         .single();
       
@@ -117,6 +126,16 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
             setPackagesState((prev) => ({ ...prev, ...parsed }));
           } catch (e) {
             console.warn("Failed to parse packages JSON", e);
+          }
+        }
+
+        if (post.form_layout) {
+          const layout = post.form_layout as { titles: Record<string, string>, order: string[] };
+          if (layout.titles) {
+            setSectionTitles(prev => ({ ...prev, ...layout.titles }));
+          }
+          if (layout.order && Array.isArray(layout.order)) {
+            setSectionOrder(layout.order);
           }
         }
       }
@@ -290,6 +309,10 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         image_url: finalPostImageUrl,
         status,
         user_id: user.id,
+        form_layout: {
+          titles: sectionTitles,
+          order: sectionOrder
+        }
       };
 
       let result;
@@ -364,9 +387,12 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     }
   }
 
-  const sectionComponents: Record<string, { title: string; component: React.ReactNode }> = {
+  const handleTitleChange = (id: string, newTitle: string) => {
+    setSectionTitles(prev => ({ ...prev, [id]: newTitle }));
+  };
+
+  const sectionComponents: Record<string, { component: React.ReactNode }> = {
     title: {
-      title: 'Post Title',
       component: (
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
@@ -375,7 +401,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       )
     },
     category: {
-      title: 'Category',
       component: (
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
@@ -389,7 +414,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       )
     },
     images: {
-      title: 'Images',
       component: (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -432,7 +456,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       )
     },
     price: {
-      title: 'General Price',
       component: (
         <div className="space-y-2">
           <Label htmlFor="price">General Price (optional if using packages)</Label>
@@ -444,7 +467,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       )
     },
     packages: {
-      title: 'Service Packages',
       component: (
         <div className="space-y-4">
           {(["basic", "gold", "platinum"] as PackageTier[]).map((tier) => (
@@ -462,7 +484,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       )
     },
     content: {
-      title: 'Post Content',
       component: (
         <SectionEditor sections={sections} setSections={setSections} />
       )
@@ -489,7 +510,12 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
               <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
                 <div className="space-y-4">
                   {sectionOrder.map((sectionId) => (
-                    <SortableFormSection key={sectionId} id={sectionId} title={sectionComponents[sectionId].title}>
+                    <SortableFormSection 
+                      key={sectionId} 
+                      id={sectionId} 
+                      title={sectionTitles[sectionId]}
+                      onTitleChange={handleTitleChange}
+                    >
                       {sectionComponents[sectionId].component}
                     </SortableFormSection>
                   ))}
