@@ -11,12 +11,12 @@ import AdminDashboard from '@/pages/admin/dashboard';
 import AdminRoute from '@/components/routes/admin-route';
 import GuestRoute from '@/components/routes/guest-route';
 import UserProfile from '@/pages/profile';
-import AuthRoute from './components/routes/auth-route';
-import FreelancerPosts from './pages/freelancer/posts';
-import FreelancerPost from './pages/freelancer/post';
-import Post from './pages/post';
-import Messages from './pages/messages';
-import Conversation from './pages/conversation';
+import AuthRoute from '@/components/routes/auth-route';
+import FreelancerPosts from '@/pages/freelancer/posts';
+import FreelancerPost from '@/pages/freelancer/post';
+import Post from '@/pages/post';
+import Messages from '@/pages/messages';
+import Conversation from '@/pages/conversation';
 
 const queryClient = new QueryClient();
 
