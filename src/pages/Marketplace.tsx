@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MarketplaceSearchBar } from "@/components/marketplace/MarketplaceSearchBar";
 import { motion, AnimatePresence } from "framer-motion";
-import { HeroSection } from "@/components/ui/hero-section";
+
 import { PostCardSkeleton } from "@/components/marketplace/PostCardSkeleton";
 
 interface Post {
@@ -196,7 +196,7 @@ export default function Marketplace() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-20">
-        <HeroSection />
+
 
         <motion.div
           className="mb-10"
