@@ -81,7 +81,7 @@ export default function PostDetails() {
       // Load post
       const { data: postData, error: postError } = await supabase
         .from("freelancer_posts")
-        .select("*, profiles(username, display_name, avatar_url)")
+        .select("*")
         .eq("id", postId)
         .eq("status", "published")
         .single();
@@ -89,7 +89,23 @@ export default function PostDetails() {
       if (postError) throw postError;
       if (!postData) throw new Error("Post not found");
       
-      setPost(postData);
+      // Load profile separately
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("username, display_name, avatar_url")
+        .eq("user_id", postData.user_id)
+        .single();
+
+      if (profileError) {
+        console.warn("Could not fetch freelancer profile:", profileError);
+      }
+
+      const postWithProfile = {
+        ...postData,
+        profiles: profileData || undefined
+      };
+      
+      setPost(postWithProfile);
       
       // Load reviews
       const { data: reviewsData, error: reviewsError } = await supabase

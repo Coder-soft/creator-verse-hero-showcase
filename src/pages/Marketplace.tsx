@@ -62,7 +62,6 @@ export default function Marketplace() {
         .from('freelancer_posts')
         .select(`
           *,
-          profiles(username, display_name, avatar_url),
           freelancer_post_reviews (rating)
         `)
         .eq('status', 'published');
@@ -97,12 +96,33 @@ export default function Marketplace() {
           query = query.order('created_at', { ascending: false });
       }
       
-      const { data, error } = await query;
+      const { data: postsData, error } = await query;
       
       if (error) throw error;
+
+      if (!postsData || postsData.length === 0) {
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get all unique user IDs from the posts
+      const userIds = [...new Set(postsData.map(p => p.user_id))];
+
+      // Fetch all profiles for these user IDs in one query
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, username, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.warn("Could not fetch some freelancer profiles:", profilesError);
+      }
+
+      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]));
       
-      const processedPosts = data?.map(post => {
-        const reviews = post.freelancer_post_reviews || [];
+      const processedPosts = postsData.map(post => {
+        const reviews = (post as any).freelancer_post_reviews || [];
         const reviewCount = reviews.length;
         const averageRating = reviewCount > 0
           ? reviews.reduce((sum: number, review: Review) => sum + review.rating, 0) / reviewCount
@@ -110,11 +130,12 @@ export default function Marketplace() {
         
         return {
           ...post,
+          profiles: profilesMap.get(post.user_id),
           freelancer_post_reviews: undefined,
           average_rating: averageRating,
           review_count: reviewCount,
         };
-      }) || [];
+      });
       
       if (sortBy === 'rating') {
         processedPosts.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
