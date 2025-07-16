@@ -27,24 +27,25 @@ export function useConversation(postId: string, freelancerId: string) {
   const getOrCreateConversation = useCallback(async () => {
     if (!user) return null;
 
-    // FIX: Use .limit(1).maybeSingle() to prevent errors when a conversation
-    // doesn't exist yet or if there are duplicates.
-    const { data: existingConversation, error: existingError } = await supabase
+    const query = supabase
       .from('conversations')
       .select('id')
       .eq('post_id', postId)
       .eq('buyer_id', user.id)
-      .eq('freelancer_id', freelancerId)
-      .limit(1)
-      .maybeSingle();
+      .eq('freelancer_id', freelancerId);
+
+    const { data: existing, error: existingError } = await query;
 
     if (existingError) {
       console.error('Error fetching conversation:', existingError);
       return null;
     }
 
-    if (existingConversation) {
-      return existingConversation.id;
+    if (existing && existing.length > 0) {
+      if (existing.length > 1) {
+        console.warn(`Duplicate conversations found for post ${postId}. Using the first one.`);
+      }
+      return existing[0].id;
     }
 
     const { data: newConversation, error: newError } = await supabase
@@ -58,8 +59,20 @@ export function useConversation(postId: string, freelancerId: string) {
       .single();
 
     if (newError) {
-      console.error('Error creating conversation:', newError);
-      return null;
+      // This handles the race condition where another client created the conversation
+      // between our SELECT and INSERT. The error code for unique violation is '23505'.
+      if ((newError as any).code === '23505') {
+        console.warn('Race condition on conversation creation. Re-fetching.');
+        const { data: raceExisting, error: raceError } = await query;
+        if (raceError || !raceExisting || raceExisting.length === 0) {
+          console.error('Failed to fetch conversation after race condition:', raceError);
+          return null;
+        }
+        return raceExisting[0].id;
+      } else {
+        console.error('Error creating conversation:', newError);
+        return null;
+      }
     }
 
     return newConversation.id;
@@ -145,7 +158,6 @@ export function useConversation(postId: string, freelancerId: string) {
 
           if (!messages.some(m => m.id === newMessage.id)) {
             setMessages((prevMessages) => [...prevMessages, newMessage]);
-            // FIX: Only mark as read if the new message is from the other user.
             if (newMessage.sender_id !== user.id) {
               await markMessagesAsRead(conversationId);
             }
