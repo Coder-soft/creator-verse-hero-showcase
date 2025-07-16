@@ -429,11 +429,13 @@ export type Database = {
       profiles: {
         Row: {
           account_status: string | null
+          age: number | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          location: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
           user_id: string
@@ -441,11 +443,13 @@ export type Database = {
         }
         Insert: {
           account_status?: string | null
+          age?: number | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          location?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id: string
@@ -453,11 +457,13 @@ export type Database = {
         }
         Update: {
           account_status?: string | null
+          age?: number | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          location?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id?: string

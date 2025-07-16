@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import FreelancerApplication from "./pages/FreelancerApplication";
 import Marketplace from "./pages/Marketplace";
 import FreelancerPostsManager from "./pages/FreelancerPostsManager";
+import FreelancerPostCreate from "./pages/FreelancerPostCreate";
 import PostDetails from "./pages/PostDetails";
 import DbSetup from "./pages/DbSetup";
 import Messaging from "./pages/Messaging";
@@ -59,6 +60,11 @@ const App = () => (
                 <Route path="/freelancer/posts" element={
                   <AuthGuard freelancerOnly={true}>
                     <FreelancerPostsManager />
+                  </AuthGuard>
+                } />
+                <Route path="/freelancer/posts/create" element={
+                  <AuthGuard freelancerOnly={true}>
+                    <FreelancerPostCreate />
                   </AuthGuard>
                 } />
                 

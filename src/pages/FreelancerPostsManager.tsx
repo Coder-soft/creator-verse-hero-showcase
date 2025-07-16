@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/ui/navbar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2, PlusCircle, Pencil, Eye, Trash2, AlertCircle } from "lucide-react";
 import {
   Dialog,
@@ -70,13 +70,7 @@ export default function FreelancerPostsManager() {
     }
   }, [user, profile, loading, navigate, toast]);
 
-  useEffect(() => {
-    if (user) {
-      loadPosts();
-    }
-  }, [user]);
-
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -98,7 +92,13 @@ export default function FreelancerPostsManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (user) {
+      loadPosts();
+    }
+  }, [user, loadPosts]);
 
   const handleCreateSuccess = () => {
     setCreateDialogOpen(false);

@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/ui/navbar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2, Star, MessageSquare, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +26,7 @@ interface Post {
   content: string;
   price: number;
   category?: string;
+  packages?: string;
   status: string;
   cover_image_url?: string;
   image_url?: string;
@@ -72,13 +73,7 @@ export default function PostDetails() {
   const [submitting, setSubmitting] = useState(false);
 
   // Load post and reviews
-  useEffect(() => {
-    if (postId) {
-      loadPostAndReviews();
-    }
-  }, [postId]);
-
-  const loadPostAndReviews = async () => {
+  const loadPostAndReviews = useCallback(async () => {
     if (!postId) return;
     
     setLoading(true);
@@ -126,7 +121,13 @@ export default function PostDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId, user, toast]);
+
+  useEffect(() => {
+    if (postId) {
+      loadPostAndReviews();
+    }
+  }, [postId, loadPostAndReviews]);
 
   const handleSubmitReview = async () => {
     if (!user) {
@@ -262,6 +263,24 @@ export default function PostDetails() {
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
 
+  // Parse packages JSON if present
+  type PackageTier = "basic" | "gold" | "platinum";
+  interface PackageInfo {
+    title: string;
+    description?: string;
+    price?: string | number;
+    deliveryTime?: string | number;
+  }
+  const packages: Record<PackageTier, PackageInfo> | null = post?.packages ? (() => {
+    try {
+      if (typeof post.packages === "string") return JSON.parse(post.packages);
+      // if already object
+      return post.packages as Record<PackageTier, PackageInfo>;
+    } catch {
+      return null;
+    }
+  })() : null;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -315,6 +334,34 @@ export default function PostDetails() {
                 </div>
               )}
               
+              {/* Packages Section */}
+              {packages && (
+                <Card className="mb-8">
+                  <CardHeader>
+                    <CardTitle>Packages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {(Object.keys(packages) as PackageTier[]).map(tier => {
+                        const pkg = packages[tier];
+                        if (!pkg) return null;
+                        return (
+                          <div key={tier} className="border rounded-lg p-4 flex flex-col">
+                            <h4 className="text-lg font-semibold capitalize mb-2 text-primary">{pkg.title || tier}</h4>
+                            {pkg.description && <p className="text-sm text-muted-foreground mb-4 flex-1">{pkg.description}</p>}
+                            {pkg.deliveryTime && (
+                              <p className="text-xs text-muted-foreground mb-2">Delivery: {pkg.deliveryTime} day(s)</p>
+                            )}
+                            <p className="text-2xl font-bold mb-4">${pkg.price || "-"}</p>
+                            <Button disabled variant="secondary">Purchase (Coming Soon)</Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="mb-8">
                 <CardHeader>
                   <CardTitle>Description</CardTitle>
@@ -464,4 +511,4 @@ export default function PostDetails() {
       </div>
     </div>
   );
-} 
+}

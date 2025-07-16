@@ -27,6 +27,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Handle redirects that contain auth tokens (e.g. email confirmation, magic links, OAuth)
+  useEffect(() => {
+    // Supabase appends query params such as ?type=signup&access_token=... after the user clicks a confirmation link.
+    if (typeof window !== 'undefined') {
+      const hasAuthParams = window.location.search.includes('access_token') && window.location.search.includes('type');
+      if (hasAuthParams) {
+        supabase.auth.getSessionFromUrl().then(({ data, error }) => {
+          if (error) {
+            console.error('Error retrieving session from URL:', error);
+          }
+          // Supabase persists the session internally; we just need to clean up the URL for aesthetics.
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+      }
+    }
+  }, []);
+
   // 1. Handle auth state changes from Supabase
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

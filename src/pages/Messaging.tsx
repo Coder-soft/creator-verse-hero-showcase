@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Navbar } from "@/components/ui/navbar";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageChat } from "@/components/messaging/MessageChat";
 

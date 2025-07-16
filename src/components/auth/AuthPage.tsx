@@ -94,9 +94,8 @@ export default function AuthPage() {
         provider,
         options: {
           redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            // Store the selected role in the OAuth state for user metadata
-            state: JSON.stringify({ initial_role: userRole })
+          data: {
+            initial_role: userRole
           }
         }
       });

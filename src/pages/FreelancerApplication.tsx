@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -60,21 +60,8 @@ export default function FreelancerApplication() {
   const [application, setApplication] = useState<Application | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
-    if (!user && profile === null) {
-      navigate('/auth');
-      return;
-    }
-    if (profile && profile.role !== 'buyer' && profile.role !== 'freelancer') {
-      navigate('/');
-      return;
-    }
-    if (user) {
-      fetchApplicationData();
-    }
-  }, [user, profile, navigate]);
-
-  const fetchApplicationData = async () => {
+  const fetchApplicationData = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     setError(null);
     try {
@@ -89,7 +76,7 @@ export default function FreelancerApplication() {
       const { data: applications, error: appError } = await supabase
         .from('freelancer_applications')
         .select('*, freelancer_application_answers(*)')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (appError) throw appError;
@@ -117,7 +104,28 @@ export default function FreelancerApplication() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (!user && profile === null) {
+      navigate('/auth');
+      return;
+    }
+    if (profile && profile.role !== 'buyer' && profile.role !== 'freelancer') {
+      navigate('/');
+      return;
+    }
+    if (user) {
+      fetchApplicationData();
+    }
+   }, [user, profile, navigate, fetchApplicationData]);
+
+   // Redirect if application already approved or account set to active
+   useEffect(() => {
+     if (application?.status === 'approved' || profile?.account_status === 'active') {
+       navigate('/profile');
+     }
+   }, [application?.status, profile?.account_status, navigate]);
 
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -278,7 +286,7 @@ export default function FreelancerApplication() {
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
           {application && application.status !== 'approved' && (<Button variant="outline" onClick={() => setShowDeleteConfirm(true)} disabled={submitting}>Delete Application</Button>)}
-          <Button onClick={handleSubmit} disabled={submitting || application?.status === 'pending'}>{submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{application?.status === 'rejected' ? 'Resubmit Application' : 'Submit Application'}</Button>
+          <Button onClick={handleSubmit} disabled={submitting || application?.status === 'pending' || application?.status === 'approved'}>{submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{application?.status === 'rejected' ? 'Resubmit Application' : application?.status === 'approved' ? 'Application Approved' : 'Submit Application'}</Button>
         </CardFooter>
       </Card>
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

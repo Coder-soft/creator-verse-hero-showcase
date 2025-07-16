@@ -1,19 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/ui/navbar";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Sparkles, ArrowDownAZ, Star, Loader2 } from "lucide-react";
+import { Sparkles, ArrowDownAZ, Star, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MarketplaceSearchBar } from "@/components/marketplace/MarketplaceSearchBar";
 
 interface Post {
   id: string;
   title: string;
   content: string;
   price: number;
+  category: string;
   cover_image_url?: string;
   image_url?: string;
   created_at: string;
@@ -35,6 +36,7 @@ interface Review {
 export default function Marketplace() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("recommended");
   const [activeTab, setActiveTab] = useState("all");
@@ -56,23 +58,26 @@ export default function Marketplace() {
     setLoading(true);
     
     try {
-      // Create a query for published posts with profile info
       let query = supabase
         .from('freelancer_posts')
         .select(`
           *,
-          profiles!user_id(username, display_name, avatar_url),
+          profiles(username, display_name, avatar_url),
           freelancer_post_reviews (rating)
         `)
         .eq('status', 'published');
       
-      // Add category filter if selected
       if (selectedCategory) {
-        // Filter posts by category
         query = query.eq('category', selectedCategory);
       }
+
+      if (searchQuery) {
+        query = query.textSearch('fts', searchQuery, {
+          type: 'websearch',
+          config: 'english',
+        });
+      }
       
-      // Add sort options
       switch (sortBy) {
         case 'newest':
           query = query.order('created_at', { ascending: false });
@@ -84,10 +89,11 @@ export default function Marketplace() {
           query = query.order('price', { ascending: false });
           break;
         case 'rating':
-          // Rating will be calculated client-side for now
+          // Client-side sorting for rating
           query = query.order('created_at', { ascending: false });
           break;
         default:
+          // 'recommended' will also be sorted by creation date for now
           query = query.order('created_at', { ascending: false });
       }
       
@@ -95,7 +101,6 @@ export default function Marketplace() {
       
       if (error) throw error;
       
-      // Process posts to add average rating
       const processedPosts = data?.map(post => {
         const reviews = post.freelancer_post_reviews || [];
         const reviewCount = reviews.length;
@@ -105,13 +110,12 @@ export default function Marketplace() {
         
         return {
           ...post,
-          freelancer_post_reviews: undefined, // Remove the reviews array to clean up the object
+          freelancer_post_reviews: undefined,
           average_rating: averageRating,
           review_count: reviewCount,
         };
       }) || [];
       
-      // Apply additional sorting if needed
       if (sortBy === 'rating') {
         processedPosts.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
       }
@@ -122,22 +126,20 @@ export default function Marketplace() {
     } finally {
       setLoading(false);
     }
-  }, [sortBy, selectedCategory]);
+  }, [sortBy, selectedCategory, searchQuery]);
 
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
 
+  const handleSearch = () => {
+    setSearchQuery(searchTerm);
+  };
+
   const getInitials = (name?: string) => {
     if (!name) return "U";
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-
-  const filteredPosts = searchTerm
-    ? posts.filter(post => 
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchTerm.toLowerCase()))
-    : posts;
 
   const renderStars = (rating?: number) => {
     const roundedRating = Math.round(rating || 0);
@@ -158,85 +160,32 @@ export default function Marketplace() {
       <Navbar />
       <div className="container mx-auto px-4 py-20">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl font-bold">Marketplace</h1>
-              <p className="text-muted-foreground mt-2">Find the perfect freelancer for your next project</p>
-            </div>
+          <div className="flex flex-col items-center text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold">Marketplace</h1>
+            <p className="text-muted-foreground mt-2 max-w-2xl">
+              Find the perfect freelancer for your next project. Browse our categories or search for specific skills.
+            </p>
           </div>
           
-          {/* Search and filters */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
-            <Card className="lg:col-span-3 shadow-md">
-              <CardContent className="p-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <input 
-                    type="text"
-                    placeholder="Search for services or freelancers..."
-                    className="w-full rounded-md pl-10 pr-4 py-3 border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-lg"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="lg:col-span-1">
-              <Button className="w-full flex items-center justify-between py-3 px-4" variant="outline">
-                <span className="flex items-center">
-                  <Filter className="h-5 w-5 mr-2" />
-                  Advanced Filters
-                </span>
-                <span className="bg-primary/10 text-primary text-xs rounded-full px-2 py-0.5">New</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="mb-8 overflow-x-auto">
-            <div className="flex space-x-2 pb-2 min-w-max">
-              <Button 
-                variant={selectedCategory === null ? "default" : "outline"} 
-                className="rounded-full" 
-                size="sm"
-                onClick={() => setSelectedCategory(null)}
-              >
-                All Categories
-              </Button>
-              {categories.map((category) => (
-                <Button 
-                  key={category} 
-                  variant={selectedCategory === category ? "default" : "outline"} 
-                  className="rounded-full" 
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
+          <div className="mb-10">
+            <MarketplaceSearchBar
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              categories={categories}
+              onSearch={handleSearch}
+            />
           </div>
           
-          {/* Sort options */}
           <div className="flex justify-between items-center mb-6">
             <p className="text-sm text-muted-foreground">
-              Showing <strong>{filteredPosts.length}</strong> services
+              Showing <strong>{posts.length}</strong> services
+              {searchQuery && <span> for "<strong>{searchQuery}</strong>"</span>}
+              {selectedCategory && <span> in <strong>{selectedCategory}</strong></span>}
             </p>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">Sort by:</span>
-              <select 
-                className="bg-background border border-input rounded-md text-sm py-1 px-2"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="recommended">Recommended</option>
-                <option value="newest">Newest</option>
-                <option value="rating">Top Rated</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
-            </div>
           </div>
 
           {/* Tabs */}
@@ -262,9 +211,9 @@ export default function Marketplace() {
                 <div className="flex justify-center items-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : filteredPosts.length > 0 ? (
+              ) : posts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredPosts.map((post) => (
+                  {posts.map((post) => (
                     <Card key={post.id} className="shadow-sm hover:shadow-md transition-shadow">
                       {post.cover_image_url && (
                         <div className="w-full h-40 overflow-hidden">
@@ -314,15 +263,17 @@ export default function Marketplace() {
                 </div>
               ) : (
                 <div className="text-center py-20 border rounded-lg">
-                  <p className="text-muted-foreground">No posts found.</p>
-                  {searchTerm && (
-                    <Button 
-                      variant="link" 
-                      onClick={() => setSearchTerm("")}
-                    >
-                      Clear search
-                    </Button>
-                  )}
+                  <p className="text-muted-foreground">No posts found matching your criteria.</p>
+                  <Button 
+                    variant="link" 
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSearchQuery("");
+                      setSelectedCategory(null);
+                    }}
+                  >
+                    Clear all filters
+                  </Button>
                 </div>
               )}
             </TabsContent>
@@ -352,4 +303,4 @@ export default function Marketplace() {
       </div>
     </div>
   );
-} 
+}

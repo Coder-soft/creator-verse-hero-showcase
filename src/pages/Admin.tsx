@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { supabaseAdmin, hasServiceRoleKey } from '@/integrations/supabase/admin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -160,14 +160,23 @@ export default function AdminPage() {
       navigate('/');
       return;
     }
+    // Only fetch data once when the component mounts and user is available
+    // The initial check for user/profile handles redirection, then we fetch.
+  }, [user, profile, isAdmin, navigate, loadingUsers]);
+
+  useEffect(() => {
     fetchData();
-  }, [user, profile, isAdmin, navigate, toast, fetchData, loadingUsers]);
+  }, [fetchData]);
 
   const handleApplicationAction = async (applicationId: string, status: 'approved' | 'rejected', userId: string) => {
     setProcessing(true);
     try {
       await supabase.from('freelancer_applications').update({ status, reviewed_at: new Date().toISOString(), reviewed_by: user?.id }).eq('id', applicationId);
-      await supabase.from('profiles').update({ account_status: status === 'approved' ? 'active' : 'rejected' }).eq('user_id', userId);
+      await supabase.from('profiles').update({ 
+        account_status: status === 'approved' ? 'active' : 'rejected',
+        // Grant freelancer role upon approval so user gets proper privileges
+        role: status === 'approved' ? 'freelancer' : 'buyer',
+      }).eq('user_id', userId);
       setApplications(applications.map(app => app.id === applicationId ? { ...app, status } : app));
       toast({ title: `Application ${status}`, description: `The freelancer application has been ${status}.` });
       setIsReviewDialogOpen(false);

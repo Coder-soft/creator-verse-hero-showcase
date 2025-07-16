@@ -216,6 +216,12 @@ const Profile = () => {
 
   const renderAccountStatus = () => {
     if (!profile) return null;
+
+    // If profile still marked pending but application has been approved, treat as active for UI
+    if (profile.account_status === 'pending_approval' && freelancerApplication?.status === 'approved') {
+      return <Badge variant="success">Active</Badge>;
+    }
+
     const status = profile.account_status;
     switch (status) {
       case 'active': return <Badge variant="success">Active</Badge>;
@@ -242,35 +248,24 @@ const Profile = () => {
 
   const renderFreelancerActions = () => {
     if (!isApprovedFreelancer) return null;
-    
+
     return (
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Freelancer Tools</CardTitle>
-          <CardDescription>Manage your freelancer services</CardDescription>
+          <CardDescription>Quick actions</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button 
-            className="w-full"
-            onClick={() => navigate('/freelancer/posts')}
-          >
+        <CardContent className="flex flex-col gap-2">
+          <Button className="w-full" onClick={() => navigate('/freelancer/posts')}>
             Manage Your Posts
+          </Button>
+          <Button variant="outline" className="w-full" onClick={() => navigate('/freelancer/posts/create')}>
+            Create New Post
           </Button>
         </CardContent>
       </Card>
     );
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <AuthGuard>

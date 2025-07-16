@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ImagePlus, DollarSign } from "lucide-react";
+import { Loader2, ImagePlus, DollarSign, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import ReactMarkdown from "react-markdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -18,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { TablesUpdate } from "@/integrations/supabase/types";
 
 interface PostEditorProps {
   postId?: string; // Optional for editing existing post
@@ -34,11 +36,35 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [price, setPrice] = useState<string>("");
+
+  // Packages state
+  type PackageTier = "basic" | "gold" | "platinum";
+  interface PackageInfo {
+    title: string;
+    description: string;
+    price: string; // keep as string for input control
+    deliveryTime: string; // days
+  }
+
+  const [packagesState, setPackagesState] = useState<Record<PackageTier, PackageInfo>>({
+    basic: { title: "Basic", description: "", price: "", deliveryTime: "" },
+    gold: { title: "Gold", description: "", price: "", deliveryTime: "" },
+    platinum: { title: "Platinum", description: "", price: "", deliveryTime: "" },
+  });
   const [category, setCategory] = useState<string>("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string>("");
   const [postImage, setPostImage] = useState<File | null>(null);
   const [postImageUrl, setPostImageUrl] = useState<string>("");
+
+  // Freelancer profile fields
+  const { profile, refreshProfile } = useAuth();
+  const [displayName, setDisplayName] = useState<string>(profile?.display_name || "");
+  const [location, setLocation] = useState<string>(profile?.location || "");
+  const [age, setAge] = useState<string>(profile?.age ? profile.age.toString() : "");
+  const [bio, setBio] = useState<string>(profile?.bio || "");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string>(profile?.avatar_url || "");
   
   // For markdown preview
   const [activeTab, setActiveTab] = useState<string>("write");
@@ -67,6 +93,15 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       if (error) throw error;
       
       if (post) {
+        // Load packages if present
+        if (post.packages) {
+          try {
+            const parsed = typeof post.packages === "string" ? JSON.parse(post.packages) : post.packages;
+            setPackagesState((prev) => ({ ...prev, ...parsed }));
+          } catch (e) {
+            console.warn("Failed to parse packages JSON", e);
+          }
+        }
         setTitle(post.title);
         setContent(post.content);
         setPrice(post.price.toString());
@@ -127,6 +162,39 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     return data.publicUrl;
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      const url = URL.createObjectURL(file);
+      setAvatarUrl(url);
+    }
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+    try {
+      const updates: TablesUpdate<"profiles"> = {
+        display_name: displayName,
+        bio,
+        location,
+        age: parseInt(age, 10) || null,
+        updated_at: new Date().toISOString(),
+      };
+      if (avatarFile) {
+        const newUrl = await uploadImage(avatarFile, `avatars/${user.id}`);
+        updates.avatar_url = newUrl;
+      }
+      const { error } = await supabase.from("profiles").update(updates).eq("user_id", user.id);
+      if (error) throw error;
+      await refreshProfile();
+      toast({ title: "Profile updated" });
+    } catch (error) {
+      console.error("Error updating profile", error);
+      toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
+    }
+  };
+
   const validateForm = () => {
     if (!title.trim()) {
       toast({
@@ -146,7 +214,18 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       return false;
     }
 
-    if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+    if (!price && Object.values(packagesState).every((p) => !p.price || parseFloat(p.price) <= 0)) {
+      toast({
+        title: "Invalid price",
+        description: "Please enter at least one valid package price or general price",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!price && Object.values(packagesState).some((p) => p.price && parseFloat(p.price) > 0)) {
+      // Using package-only pricing; that's fine.
+    } else if (price && (isNaN(parseFloat(price)) || parseFloat(price) <= 0)) {
       toast({
         title: "Invalid price",
         description: "Please enter a valid price",
@@ -193,9 +272,11 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       }
 
       const postData = {
+        packages: JSON.stringify(packagesState),
+
         title,
         content,
-        price: parseFloat(price),
+        price: price ? parseFloat(price) : null,
         category,
         cover_image_url: finalCoverImageUrl,
         image_url: finalPostImageUrl,
@@ -205,7 +286,15 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
 
       let result;
       
-      if (postId) {
+     if (profile) {
+      setDisplayName(profile.display_name || "");
+      setLocation(profile.location || "");
+      setAge(profile.age ? String(profile.age) : "");
+      setBio(profile.bio || "");
+      setAvatarUrl(profile.avatar_url || "");
+    }
+
+    if (postId) {
         // Update existing post
         result = await supabase
           .from("freelancer_posts")
@@ -261,7 +350,9 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   }
 
   return (
-    <Card className="w-full">
+    <div className="grid lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-2">
+        <Card className="w-full">
       <CardHeader>
         <CardTitle>{postId ? "Edit Post" : "Create New Post"}</CardTitle>
       </CardHeader>
@@ -390,7 +481,7 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="price">Price</Label>
+          <Label htmlFor="price">General Price (optional if using packages)</Label>
           <div className="relative">
             <DollarSign className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -404,6 +495,57 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
               className="pl-10"
             />
           </div>
+        </div>
+
+        {/* Packages Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Packages</h3>
+          {(["basic", "gold", "platinum"] as PackageTier[]).map((tier) => (
+            <Card key={tier} className="p-4">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="capitalize text-primary">{tier}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 p-0">
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input
+                    value={packagesState[tier].title}
+                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], title: e.target.value } }))}
+                    placeholder="Package title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Price</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={packagesState[tier].price}
+                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], price: e.target.value } }))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Delivery Time (days)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={packagesState[tier].deliveryTime}
+                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], deliveryTime: e.target.value } }))}
+                    placeholder="3"
+                  />
+                </div>
+                <div className="col-span-full space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={packagesState[tier].description}
+                    onChange={(e) => setPackagesState((prev) => ({ ...prev, [tier]: { ...prev[tier], description: e.target.value } }))}
+                    placeholder="Describe what is included in this package"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <div className="space-y-2">
@@ -452,6 +594,47 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
           Publish Post
         </Button>
       </CardFooter>
-    </Card>
+        </Card>
+      </div>
+
+      {/* Right Side Freelancer Info Panel */}
+      <div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Profile</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col items-center text-center">
+              <Avatar className="h-24 w-24 mb-2">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback>{displayName ? displayName.substring(0,2).toUpperCase() : "U"}</AvatarFallback>
+              </Avatar>
+              <Button variant="outline" size="sm" onClick={() => document.getElementById("avatarInput")?.click()}>Change Avatar</Button>
+              <Input id="avatarInput" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Display Name</Label>
+              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="City, Country" />
+            </div>
+            <div className="space-y-2">
+              <Label>Age</Label>
+              <Input type="number" min="0" value={age} onChange={(e) => setAge(e.target.value)} placeholder="25" />
+            </div>
+            <div className="space-y-2">
+              <Label>Bio</Label>
+              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Short bio" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" onClick={saveProfile}>Save Profile</Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
   );
 } 
