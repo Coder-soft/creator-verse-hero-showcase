@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/ui/navbar";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Star, MessageSquare, ArrowLeft } from "lucide-react";
+import { Loader2, Star, MessageSquare, ArrowLeft, MapPin, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Section } from "@/components/freelancer/SectionEditor";
+import { Separator } from "@/components/ui/separator";
 
 interface Post {
   id: string;
@@ -39,6 +40,9 @@ interface Post {
     username?: string;
     display_name?: string;
     avatar_url?: string;
+    location?: string | null;
+    age?: number | null;
+    bio?: string | null;
   };
 }
 
@@ -90,7 +94,7 @@ export default function PostDetails() {
       
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("username, display_name, avatar_url")
+        .select("username, display_name, avatar_url, location, age, bio")
         .eq("user_id", postData.user_id)
         .single();
 
@@ -311,56 +315,127 @@ export default function PostDetails() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-20">
-        <div className="max-w-6xl mx-auto">
-          <Link to="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-8">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            <span>Back to Marketplace</span>
-          </Link>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              {post.cover_image_url && (
-                <div className="mb-8 rounded-lg overflow-hidden">
-                  <img 
-                    src={post.cover_image_url} 
-                    alt={post.title} 
-                    className="w-full h-64 object-cover" 
-                  />
-                </div>
-              )}
-              
-              <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12">
+            
+            {/* Left Column - Freelancer Profile */}
+            <div className="lg:col-span-1">
+              <Card className="sticky top-24">
+                <CardHeader>
+                  <div className="flex flex-col items-center text-center">
+                    <Avatar className="h-24 w-24 mb-4">
+                      <AvatarImage src={post.profiles?.avatar_url || ""} />
+                      <AvatarFallback>{getInitials(post.profiles?.display_name)}</AvatarFallback>
+                    </Avatar>
+                    <CardTitle>{post.profiles?.display_name || post.profiles?.username}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  {post.profiles?.bio && (
+                    <p className="text-center text-muted-foreground mb-4">{post.profiles.bio}</p>
+                  )}
+                  <Separator />
+                  <div className="space-y-2 mt-4">
+                    {post.profiles?.location && (
+                      <div className="flex items-center">
+                        <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{post.profiles.location}</span>
+                      </div>
+                    )}
+                    {post.profiles?.age && (
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span>{post.profiles.age} years old</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      if (!user) {
+                        toast({
+                          title: "Authentication required",
+                          description: "Please login to contact the freelancer",
+                          variant: "destructive",
+                        });
+                        navigate("/auth");
+                        return;
+                      }
+                      
+                      if (profile?.role !== 'buyer') {
+                        toast({
+                          title: "Buyer account required",
+                          description: "You need a buyer account to contact freelancers",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      navigate(`/messaging`, { 
+                        state: { 
+                          postId: post.id,
+                          freelancerId: post.user_id 
+                        }
+                      });
+                    }}
+                  >
+                    Contact Freelancer
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+
+            {/* Right Column - Post Details */}
+            <div className="lg:col-span-2 space-y-8">
+              <Link to="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                <span>Back to Marketplace</span>
+              </Link>
+
+              <h1 className="text-4xl font-bold">{post.title}</h1>
               
               {post.category && (
-                <div className="mb-4">
+                <div>
                   <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
                     {post.category}
                   </span>
                 </div>
               )}
-              
-              <div className="flex items-center mb-6">
-                <Avatar className="h-8 w-8 mr-2">
-                  <AvatarImage src={post.profiles?.avatar_url || ""} />
-                  <AvatarFallback>{getInitials(post.profiles?.display_name)}</AvatarFallback>
-                </Avatar>
-                <span className="text-muted-foreground">
-                  {post.profiles?.display_name || post.profiles?.username || "Freelancer"}
-                </span>
-              </div>
-              
-              {post.image_url && (
-                <div className="mb-8">
+
+              {post.cover_image_url && (
+                <div className="rounded-lg overflow-hidden">
                   <img 
-                    src={post.image_url} 
-                    alt="Post illustration" 
-                    className="max-w-full rounded-lg" 
+                    src={post.cover_image_url} 
+                    alt={post.title} 
+                    className="w-full h-auto object-cover" 
                   />
                 </div>
               )}
               
+              <Card>
+                <CardHeader>
+                  <CardTitle>Description</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose dark:prose-invert max-w-full space-y-4">
+                    {post.sections && post.sections.length > 0 ? (
+                      post.sections.map(section => (
+                        <div key={section.id}>
+                          {section.type === 'markdown' && <ReactMarkdown>{section.content}</ReactMarkdown>}
+                          {section.type === 'image' && <img src={section.content} alt="Post content" className="rounded-md max-w-full" />}
+                        </div>
+                      ))
+                    ) : (
+                      <ReactMarkdown>{post.content}</ReactMarkdown>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
               {packages && (
-                <Card className="mb-8">
+                <Card>
                   <CardHeader>
                     <CardTitle>Packages</CardTitle>
                   </CardHeader>
@@ -386,26 +461,6 @@ export default function PostDetails() {
                 </Card>
               )}
 
-              <Card className="mb-8">
-                <CardHeader>
-                  <CardTitle>Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose dark:prose-invert max-w-full space-y-4">
-                    {post.sections && post.sections.length > 0 ? (
-                      post.sections.map(section => (
-                        <div key={section.id}>
-                          {section.type === 'markdown' && <ReactMarkdown>{section.content}</ReactMarkdown>}
-                          {section.type === 'image' && <img src={section.content} alt="Post content" className="rounded-md max-w-full" />}
-                        </div>
-                      ))
-                    ) : (
-                      <ReactMarkdown>{post.content}</ReactMarkdown>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Reviews</CardTitle>
@@ -488,51 +543,6 @@ export default function PostDetails() {
                       </DialogContent>
                     </Dialog>
                   )}
-                </CardFooter>
-              </Card>
-            </div>
-            
-            <div className="lg:col-span-1">
-              <Card className="sticky top-24">
-                <CardHeader>
-                  <CardTitle className="text-3xl font-bold">${post.price.toFixed(2)}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">Contact the freelancer to discuss this service</p>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    className="w-full" 
-                    onClick={() => {
-                      if (!user) {
-                        toast({
-                          title: "Authentication required",
-                          description: "Please login to contact the freelancer",
-                          variant: "destructive",
-                        });
-                        navigate("/auth");
-                        return;
-                      }
-                      
-                      if (profile?.role !== 'buyer') {
-                        toast({
-                          title: "Buyer account required",
-                          description: "You need a buyer account to contact freelancers",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      
-                      navigate(`/messaging`, { 
-                        state: { 
-                          postId: post.id,
-                          freelancerId: post.user_id 
-                        }
-                      });
-                    }}
-                  >
-                    Contact Freelancer
-                  </Button>
                 </CardFooter>
               </Card>
             </div>
