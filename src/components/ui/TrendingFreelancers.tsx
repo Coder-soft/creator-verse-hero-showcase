@@ -1,11 +1,16 @@
+<<<<<<< Updated upstream
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+=======
+import React, { useState, useEffect } from 'react';
+>>>>>>> Stashed changes
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star } from 'lucide-react';
+import { Star, Loader2 } from 'lucide-react';
 import { Button } from './button';
 import { supabase } from '@/integrations/supabase/client';
+<<<<<<< Updated upstream
 
 interface FreelancerCard {
   id: string;
@@ -50,6 +55,24 @@ const placeholderAvatar = '/placeholder.svg';
     skills: ['SEO', 'Copywriting', 'Marketing'],
 */
 
+=======
+import { Link } from 'react-router-dom';
+
+interface Freelancer {
+  user_id: string;
+  display_name: string;
+  avatar_url: string;
+  title: string;
+  average_rating: number;
+  review_count: number;
+  skills: string[];
+}
+
+const getInitials = (name?: string) => {
+  if (!name) return "U";
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+};
+>>>>>>> Stashed changes
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -64,6 +87,7 @@ const cardVariants = {
 };
 
 export function TrendingFreelancers() {
+<<<<<<< Updated upstream
   const navigate = useNavigate();
   const [freelancers, setFreelancers] = useState<FreelancerCard[]>([]);
 
@@ -120,6 +144,37 @@ export function TrendingFreelancers() {
     };
 
     fetchFreelancers();
+=======
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTrendingFreelancers = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_trending_freelancers', { limit_count: 3 });
+
+        if (error) {
+          throw error;
+        }
+
+        // The RPC function is expected to return the skills as a string, so we parse it.
+        const processedData = data.map((freelancer: any) => ({
+          ...freelancer,
+          skills: freelancer.skills ? freelancer.skills.split(',').map((s: string) => s.trim()) : [],
+        }));
+
+        setFreelancers(processedData);
+      } catch (err: any) {
+        setError(err.message);
+        console.error("Error fetching trending freelancers:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrendingFreelancers();
+>>>>>>> Stashed changes
   }, []);
 
   return (
@@ -131,6 +186,7 @@ export function TrendingFreelancers() {
             Meet our top-rated freelancers who are making waves with their exceptional skills and client satisfaction.
           </p>
         </div>
+<<<<<<< Updated upstream
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {freelancers.length > 0 ? (
             freelancers.map((freelancer, i) => (
@@ -176,6 +232,79 @@ export function TrendingFreelancers() {
           ) : (
             <p>No freelancers found.</p>
           )}
+=======
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="h-full flex flex-col overflow-hidden border-border/60">
+                <CardHeader className="flex-row items-center gap-4">
+                  <div className="h-16 w-16 bg-muted rounded-full animate-pulse"></div>
+                  <div>
+                    <div className="h-6 w-32 bg-muted rounded animate-pulse mb-2"></div>
+                    <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <div className="h-6 w-20 bg-muted rounded animate-pulse mb-4"></div>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="h-6 w-16 bg-muted rounded-full animate-pulse"></div>
+                    <div className="h-6 w-20 bg-muted rounded-full animate-pulse"></div>
+                    <div className="h-6 w-14 bg-muted rounded-full animate-pulse"></div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
+                </CardFooter>
+              </Card>
+            ))
+          ) : error ? (
+            <div className="col-span-3 text-center py-10">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : (
+          {freelancers.map((freelancer, i) => (
+            <motion.div
+              key={freelancer.name}
+              custom={i}
+              variants={cardVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+            >
+              <Card className="h-full flex flex-col overflow-hidden border-border/60 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
+                <CardHeader className="flex-row items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={freelancer.avatar} alt={freelancer.name} />
+                    <AvatarFallback>{getInitials(freelancer.display_name)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle>{freelancer.display_name}</CardTitle>
+                    <p className="text-muted-foreground">{freelancer.title}</p>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-5 h-5 text-primary fill-primary" />
+                    <span className="font-bold text-lg">{freelancer.average_rating.toFixed(1)}</span>
+                    <span className="text-muted-foreground text-sm">({freelancer.review_count} reviews)</span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {freelancer.skills.map(skill => (
+                      <span key={skill} className="px-3 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Link to={`/freelancer/${freelancer.user_id}`} className="w-full">
+                    <Button variant="outline" className="w-full">View Profile</Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          ))}
+>>>>>>> Stashed changes
         </div>
       </div>
     </section>
