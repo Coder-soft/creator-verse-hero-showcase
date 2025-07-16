@@ -10,9 +10,7 @@ const Index = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow">
-        <AnimatedSection>
-          <HeroSection />
-        </AnimatedSection>
+        <HeroSection />
         <AnimatedSection delay={0.2}>
           <TrendingFreelancers />
         </AnimatedSection>

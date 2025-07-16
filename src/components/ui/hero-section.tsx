@@ -1,62 +1,82 @@
-import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import ShinyText from "@/components/ui/ShinyText";
+import { motion } from "framer-motion";
+import { ArrowRight, UserPlus } from "lucide-react";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
 
 export function HeroSection() {
-  const navigate = useNavigate();
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
-
   return (
-    <motion.div
-      className="text-center my-16"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <motion.div
-        className="inline-block bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-4"
-        variants={itemVariants}
-      >
-        <Sparkles className="inline-block h-4 w-4 mr-2" />
-        Find Your Perfect Freelancer
-      </motion.div>
-      <motion.h1
-        className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary"
-        variants={itemVariants}
-      >
-        Creators Market
-      </motion.h1>
-      <motion.p
-        className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground"
-        variants={itemVariants}
-      >
-        Discover talented freelancers, browse their portfolios, and hire the perfect fit for your next project.
-      </motion.p>
-      <motion.div className="mt-8 flex justify-center gap-4" variants={itemVariants}>
-        <Button size="lg" onClick={() => navigate("/marketplace")}>
-          Explore Marketplace
-        </Button>
-        <Button size="lg" variant="outline" onClick={() => navigate("/freelancer-application")}>
-          Become a Freelancer
-        </Button>
-      </motion.div>
-    </motion.div>
+    <section className="relative w-full py-24 md:py-32 lg:py-40 overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/20 rounded-full filter blur-3xl opacity-50 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-secondary/20 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-primary/10 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="container mx-auto px-4 text-center">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="max-w-3xl mx-auto"
+        >
+          <motion.div variants={itemVariants}>
+            <ShinyText className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+              Unleash Your Creative Power
+            </ShinyText>
+          </motion.div>
+
+          <motion.p
+            variants={itemVariants}
+            className="mt-6 text-lg md:text-xl text-muted-foreground"
+          >
+            Creators Market is the ultimate platform to hire expert freelancers
+            and showcase your own creative services. Find the perfect talent or
+            start earning today.
+          </motion.p>
+
+          <motion.div
+            variants={itemVariants}
+            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <Link to="/marketplace">
+              <Button size="lg" className="w-full sm:w-auto">
+                Explore Marketplace
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Become a Freelancer
+              </Button>
+            </Link>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
   );
 }
