@@ -6,11 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ImagePlus, DollarSign, Star } from "lucide-react";
+import { Loader2, ImagePlus, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import ReactMarkdown from "react-markdown";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -20,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TablesUpdate } from "@/integrations/supabase/types";
+import { SectionEditor, Section } from './SectionEditor';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PostEditorProps {
   postId?: string; // Optional for editing existing post
@@ -34,8 +34,8 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [title, setTitle] = useState<string>("");
-  const [content, setContent] = useState<string>("");
   const [price, setPrice] = useState<string>("");
+  const [sections, setSections] = useState<Section[]>([]);
 
   // Packages state
   type PackageTier = "basic" | "gold" | "platinum";
@@ -65,9 +65,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const [bio, setBio] = useState<string>(profile?.bio || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>(profile?.avatar_url || "");
-  
-  // For markdown preview
-  const [activeTab, setActiveTab] = useState<string>("write");
 
   // Available categories
   const categories = [
@@ -86,14 +83,26 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     try {
       const { data: post, error } = await supabase
         .from("freelancer_posts")
-        .select("*")
+        .select("*, sections")
         .eq("id", id)
         .single();
       
       if (error) throw error;
       
       if (post) {
-        // Load packages if present
+        setTitle(post.title);
+        setPrice(post.price ? post.price.toString() : "");
+        setCategory(post.category || "");
+        setCoverImageUrl(post.cover_image_url || "");
+        setPostImageUrl(post.image_url || "");
+
+        if (post.sections && Array.isArray(post.sections)) {
+          setSections(post.sections as Section[]);
+        } else if (post.content) {
+          // Migrate from old content field
+          setSections([{ id: uuidv4(), type: 'markdown', content: post.content }]);
+        }
+
         if (post.packages) {
           try {
             const parsed = typeof post.packages === "string" ? JSON.parse(post.packages) : post.packages;
@@ -102,12 +111,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
             console.warn("Failed to parse packages JSON", e);
           }
         }
-        setTitle(post.title);
-        setContent(post.content);
-        setPrice(post.price.toString());
-        setCategory(post.category || "");
-        setCoverImageUrl(post.cover_image_url || "");
-        setPostImageUrl(post.image_url || "");
       }
     } catch (error) {
       console.error("Error loading post:", error);
@@ -130,7 +133,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setCoverImage(e.target.files[0]);
-      // Create preview URL
       const url = URL.createObjectURL(e.target.files[0]);
       setCoverImageUrl(url);
     }
@@ -139,7 +141,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
   const handlePostImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setPostImage(e.target.files[0]);
-      // Create preview URL
       const url = URL.createObjectURL(e.target.files[0]);
       setPostImageUrl(url);
     }
@@ -205,10 +206,10 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       return false;
     }
 
-    if (!content.trim()) {
+    if (sections.length === 0 || sections.every(s => !s.content.trim())) {
       toast({
         title: "Missing content",
-        description: "Please add content to your post",
+        description: "Please add some content to your post",
         variant: "destructive",
       });
       return false;
@@ -262,7 +263,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       let finalCoverImageUrl = coverImageUrl;
       let finalPostImageUrl = postImageUrl;
 
-      // Upload new images if selected
       if (coverImage) {
         finalCoverImageUrl = await uploadImage(coverImage, "post-covers");
       }
@@ -273,9 +273,9 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
 
       const postData = {
         packages: JSON.stringify(packagesState),
-
         title,
-        content,
+        sections,
+        content: sections.map(s => s.content).join('\n\n'), // For compatibility and search
         price: price ? parseFloat(price) : null,
         category,
         cover_image_url: finalCoverImageUrl,
@@ -295,7 +295,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
     }
 
     if (postId) {
-        // Update existing post
         result = await supabase
           .from("freelancer_posts")
           .update({
@@ -306,7 +305,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
           .select()
           .single();
       } else {
-        // Create new post
         result = await supabase
           .from("freelancer_posts")
           .insert(postData)
@@ -326,7 +324,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       if (onSuccess && result.data) {
         onSuccess(result.data.id);
       } else {
-        // Navigate to the post or post list
         navigate("/freelancer/posts");
       }
     } catch (error) {
@@ -497,7 +494,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
           </div>
         </div>
 
-        {/* Packages Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Packages</h3>
           {(["basic", "gold", "platinum"] as PackageTier[]).map((tier) => (
@@ -549,32 +545,8 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         </div>
 
         <div className="space-y-2">
-          <Label>Content (Markdown supported)</Label>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-2">
-              <TabsTrigger value="write">Write</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-            </TabsList>
-            <TabsContent value="write" className="mt-0">
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Describe your services in detail. Markdown is supported."
-                className="min-h-[300px] font-mono"
-              />
-            </TabsContent>
-            <TabsContent value="preview" className="mt-0">
-              <div className="border rounded-md p-4 min-h-[300px] prose dark:prose-invert max-w-full">
-                {content ? (
-                  <ReactMarkdown>{content}</ReactMarkdown>
-                ) : (
-                  <p className="text-muted-foreground text-center py-10">
-                    Your preview will appear here
-                  </p>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <Label>Content</Label>
+          <SectionEditor sections={sections} setSections={setSections} />
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
@@ -597,7 +569,6 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
         </Card>
       </div>
 
-      {/* Right Side Freelancer Info Panel */}
       <div>
         <Card>
           <CardHeader>
@@ -637,4 +608,4 @@ export function PostEditor({ postId, onSuccess }: PostEditorProps) {
       </div>
     </div>
   );
-} 
+}

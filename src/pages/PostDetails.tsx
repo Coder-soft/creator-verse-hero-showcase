@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Section } from "@/components/freelancer/SectionEditor";
 
 interface Post {
   id: string;
@@ -33,6 +34,7 @@ interface Post {
   created_at: string;
   updated_at: string;
   user_id: string;
+  sections?: Section[];
   profiles?: {
     username?: string;
     display_name?: string;
@@ -66,22 +68,19 @@ export default function PostDetails() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userReview, setUserReview] = useState<Review | null>(null);
   
-  // Review form states
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [rating, setRating] = useState<number>(5);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Load post and reviews
   const loadPostAndReviews = useCallback(async () => {
     if (!postId) return;
     
     setLoading(true);
     try {
-      // Load post
       const { data: postData, error: postError } = await supabase
         .from("freelancer_posts")
-        .select("*")
+        .select("*, sections")
         .eq("id", postId)
         .eq("status", "published")
         .single();
@@ -89,7 +88,6 @@ export default function PostDetails() {
       if (postError) throw postError;
       if (!postData) throw new Error("Post not found");
       
-      // Load freelancer profile separately
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("username, display_name, avatar_url")
@@ -107,7 +105,6 @@ export default function PostDetails() {
       
       setPost(postWithProfile);
       
-      // Load reviews
       const { data: reviewsData, error: reviewsError } = await supabase
         .from("freelancer_post_reviews")
         .select("*")
@@ -137,7 +134,6 @@ export default function PostDetails() {
       
       setReviews(reviewsWithProfiles);
       
-      // Check if user has already reviewed
       if (user) {
         const userReviewData = reviewsWithProfiles.find(r => r.user_id === user.id) || null;
         setUserReview(userReviewData);
@@ -179,7 +175,6 @@ export default function PostDetails() {
     
     setSubmitting(true);
     try {
-      // Check if user is the post owner
       if (post?.user_id === user.id) {
         toast({
           title: "Cannot review your own post",
@@ -189,7 +184,6 @@ export default function PostDetails() {
         return;
       }
       
-      // Check if user is a buyer
       if (profile?.role !== 'buyer') {
         toast({
           title: "Only buyers can leave reviews",
@@ -209,7 +203,6 @@ export default function PostDetails() {
       let result;
       
       if (userReview) {
-        // Update existing review
         result = await supabase
           .from("freelancer_post_reviews")
           .update({
@@ -219,7 +212,6 @@ export default function PostDetails() {
           })
           .eq("id", userReview.id);
       } else {
-        // Create new review
         result = await supabase
           .from("freelancer_post_reviews")
           .insert(reviewData);
@@ -233,7 +225,7 @@ export default function PostDetails() {
       });
       
       setReviewDialogOpen(false);
-      loadPostAndReviews(); // Reload reviews
+      loadPostAndReviews();
     } catch (error) {
       console.error("Error submitting review:", error);
       toast({
@@ -299,7 +291,6 @@ export default function PostDetails() {
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
 
-  // Parse packages JSON if present
   type PackageTier = "basic" | "gold" | "platinum";
   interface PackageInfo {
     title: string;
@@ -310,7 +301,6 @@ export default function PostDetails() {
   const packages: Record<PackageTier, PackageInfo> | null = post?.packages ? (() => {
     try {
       if (typeof post.packages === "string") return JSON.parse(post.packages);
-      // if already object
       return post.packages as Record<PackageTier, PackageInfo>;
     } catch {
       return null;
@@ -328,7 +318,6 @@ export default function PostDetails() {
           </Link>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Post Details */}
             <div className="lg:col-span-2">
               {post.cover_image_url && (
                 <div className="mb-8 rounded-lg overflow-hidden">
@@ -370,7 +359,6 @@ export default function PostDetails() {
                 </div>
               )}
               
-              {/* Packages Section */}
               {packages && (
                 <Card className="mb-8">
                   <CardHeader>
@@ -403,8 +391,17 @@ export default function PostDetails() {
                   <CardTitle>Description</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="prose dark:prose-invert max-w-full">
-                    <ReactMarkdown>{post.content}</ReactMarkdown>
+                  <div className="prose dark:prose-invert max-w-full space-y-4">
+                    {post.sections && post.sections.length > 0 ? (
+                      post.sections.map(section => (
+                        <div key={section.id}>
+                          {section.type === 'markdown' && <ReactMarkdown>{section.content}</ReactMarkdown>}
+                          {section.type === 'image' && <img src={section.content} alt="Post content" className="rounded-md max-w-full" />}
+                        </div>
+                      ))
+                    ) : (
+                      <ReactMarkdown>{post.content}</ReactMarkdown>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -495,7 +492,6 @@ export default function PostDetails() {
               </Card>
             </div>
             
-            {/* Right Column: Price and Action */}
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardHeader>
@@ -518,7 +514,6 @@ export default function PostDetails() {
                         return;
                       }
                       
-                      // Check if user is a buyer
                       if (profile?.role !== 'buyer') {
                         toast({
                           title: "Buyer account required",
@@ -528,7 +523,6 @@ export default function PostDetails() {
                         return;
                       }
                       
-                      // Navigate to messaging with post and freelancer info
                       navigate(`/messaging`, { 
                         state: { 
                           postId: post.id,
