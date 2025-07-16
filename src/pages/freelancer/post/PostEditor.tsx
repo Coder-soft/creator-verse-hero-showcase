@@ -127,6 +127,9 @@ export default function PostEditor() {
     return publicUrl;
   };
 
+  const isPackagesPristine = formData.packages.every(p => !p.price && !p.description && !p.delivery_days && p.name !=='');
+  const isPriceSet = formData.price !== '' && Number(formData.price) > 0;
+
   const savePost = async (status: 'draft' | 'published') => {
     if (status === 'published' && !formData.title) {
       toast.error('Title is required to publish.');
@@ -141,7 +144,6 @@ export default function PostEditor() {
       if (uploadedUrl) {
         coverUrl = uploadedUrl;
       } else {
-        // Handle upload failure
         status === 'draft' ? setIsSaving(false) : setIsPublishing(false);
         return;
       }
@@ -153,7 +155,7 @@ export default function PostEditor() {
       status,
       cover_image_url: coverUrl,
       price: formData.price ? Number(formData.price) : null,
-      packages: isPackagesPristine ? null : formData.packages.map(p => ({...p, price: Number(p.price), delivery_days: Number(p.delivery_days)})),
+      packages: isPriceSet || isPackagesPristine ? null : formData.packages.map(p => ({...p, price: Number(p.price), delivery_days: Number(p.delivery_days)})),
     };
 
     let result;
@@ -177,9 +179,6 @@ export default function PostEditor() {
 
     status === 'draft' ? setIsSaving(false) : setIsPublishing(false);
   };
-
-  const isPackagesPristine = formData.packages.every(p => !p.price && !p.description && !p.delivery_days && p.name !=='');
-  const isPriceSet = formData.price !== '' && Number(formData.price) > 0;
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -206,7 +205,7 @@ export default function PostEditor() {
             <Textarea id="content" name="content" value={formData.content} onChange={handleInputChange} placeholder="Describe your service in detail..." rows={6} />
           </div>
           <div className="grid gap-2">
-            <Label>Cover Image</Label>
+            <Label>Cover Image (for marketplace view)</Label>
             <div className="flex items-center gap-4">
               <div className="w-32 h-20 rounded-md border flex items-center justify-center bg-muted overflow-hidden">
                 {formData.cover_image_url ? (
@@ -241,57 +240,59 @@ export default function PostEditor() {
 
           <Separator />
 
-          <div>
-            <h3 className="text-lg font-medium mb-2">Packages</h3>
-            <fieldset disabled={isPriceSet} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {formData.packages.map((pkg, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <Input
-                      placeholder={['Basic', 'Standard', 'Premium'][index]}
-                      value={pkg.name}
-                      onChange={(e) => handlePackageChange(index, 'name', e.target.value)}
-                      className="text-lg font-bold p-0 border-none focus-visible:ring-0"
-                    />
-                  </CardHeader>
-                  <CardContent className="grid gap-3">
-                    <div className="grid gap-1">
-                      <Label>Description</Label>
-                      <Textarea
-                        placeholder="Package description"
-                        value={pkg.description}
-                        onChange={(e) => handlePackageChange(index, 'description', e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-                    <div className="grid gap-1">
-                      <Label>Delivery Days</Label>
+          {!isPriceSet && (
+            <div>
+              <h3 className="text-lg font-medium mb-2">Packages</h3>
+              <fieldset className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {formData.packages.map((pkg, index) => (
+                  <Card key={index}>
+                    <CardHeader>
                       <Input
-                        type="number"
-                        placeholder="e.g., 3"
-                        value={pkg.delivery_days}
-                        onChange={(e) => handlePackageChange(index, 'delivery_days', e.target.value)}
+                        placeholder={['Basic', 'Standard', 'Premium'][index]}
+                        value={pkg.name}
+                        onChange={(e) => handlePackageChange(index, 'name', e.target.value)}
+                        className="text-lg font-bold p-0 border-none focus-visible:ring-0"
                       />
-                    </div>
-                    <div className="grid gap-1">
-                      <Label>Price ($)</Label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 100"
-                        value={pkg.price}
-                        onChange={(e) => handlePackageChange(index, 'price', e.target.value)}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </fieldset>
-            {isPriceSet && (
-              <p className="text-sm text-muted-foreground mt-2">
-                A general price is set. Clear it to enable packages.
-              </p>
-            )}
-          </div>
+                    </CardHeader>
+                    <CardContent className="grid gap-3">
+                      <div className="grid gap-1">
+                        <Label>Description</Label>
+                        <Textarea
+                          placeholder="Package description"
+                          value={pkg.description}
+                          onChange={(e) => handlePackageChange(index, 'description', e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="grid gap-1">
+                        <Label>Delivery Days</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 3"
+                          value={pkg.delivery_days}
+                          onChange={(e) => handlePackageChange(index, 'delivery_days', e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-1">
+                        <Label>Price ($)</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 100"
+                          value={pkg.price}
+                          onChange={(e) => handlePackageChange(index, 'price', e.target.value)}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </fieldset>
+            </div>
+          )}
+          {isPriceSet && (
+            <p className="text-sm text-muted-foreground">
+              A general price is set. Clear it to edit packages.
+            </p>
+          )}
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => savePost('draft')} disabled={isSaving || isPublishing}>
