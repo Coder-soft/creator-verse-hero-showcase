@@ -18,12 +18,7 @@ import { SortableSectionItem } from './SortableSectionItem';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-
-export interface Section {
-  id: string;
-  type: 'markdown' | 'image';
-  content: string;
-}
+import { Section } from './types';
 
 interface SectionEditorProps {
   sections: Section[];

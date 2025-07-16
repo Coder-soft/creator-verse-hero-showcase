@@ -4,10 +4,12 @@ import { Navbar } from "@/components/ui/navbar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowDownAZ, Star } from "lucide-react";
+import { Sparkles, ArrowDownAZ, Star, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MarketplaceSearchBar } from "@/components/marketplace/MarketplaceSearchBar";
+import { motion, AnimatePresence } from "framer-motion";
+import { HeroSection } from "@/components/ui/hero-section";
 import { PostCardSkeleton } from "@/components/marketplace/PostCardSkeleton";
 
 interface Post {
@@ -177,153 +179,183 @@ export default function Marketplace() {
     );
   };
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: i * 0.1,
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    }),
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col items-center text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold">Marketplace</h1>
-            <p className="text-muted-foreground mt-2 max-w-2xl">
-              Find the perfect freelancer for your next project. Browse our categories or search for specific skills.
-            </p>
-          </div>
-          
-          <div className="mb-10">
-            <MarketplaceSearchBar
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              categories={categories}
-              onSearch={handleSearch}
-            />
-          </div>
-          
-          <div className="flex justify-between items-center mb-6">
-            <p className="text-sm text-muted-foreground">
-              Showing <strong>{posts.length}</strong> services
-              {searchQuery && <span> for "<strong>{searchQuery}</strong>"</span>}
-              {selectedCategory && <span> in <strong>{selectedCategory}</strong></span>}
-            </p>
-          </div>
-
-          {/* Tabs */}
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="featured" className="flex items-center">
-                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                Featured
-              </TabsTrigger>
-              <TabsTrigger value="top-rated" className="flex items-center">
-                <Star className="h-3.5 w-3.5 mr-1.5" />
-                Top Rated
-              </TabsTrigger>
-              <TabsTrigger value="new" className="flex items-center">
-                <ArrowDownAZ className="h-3.5 w-3.5 mr-1.5" />
-                Newest
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all" className="mt-6">
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <PostCardSkeleton key={i} />
-                  ))}
-                </div>
-              ) : posts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {posts.map((post) => (
-                    <Card key={post.id} className="shadow-sm hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1">
-                      {post.cover_image_url && (
-                        <div className="w-full h-40 overflow-hidden">
-                          <img 
-                            src={post.cover_image_url}
-                            alt={post.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{post.title}</CardTitle>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Avatar className="h-6 w-6 mr-2">
-                            <AvatarImage src={post.profiles?.avatar_url || ""} />
-                            <AvatarFallback>{getInitials(post.profiles?.display_name)}</AvatarFallback>
-                          </Avatar>
-                          <span>{post.profiles?.display_name || post.profiles?.username || "Freelancer"}</span>
-                          {post.review_count ? (
-                            <>
-                              <span className="mx-2">•</span>
-                              <div className="flex items-center">
-                                {renderStars(post.average_rating)}
-                                <span className="ml-1">({post.review_count})</span>
-                              </div>
-                            </>
-                          ) : null}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {post.content.replace(/[#*_~`]/g, '')}
-                        </p>
-                      </CardContent>
-                      <CardFooter className="flex justify-between pt-2">
-                        <span className="font-medium">${post.price.toFixed(2)}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => navigate(`/marketplace/post/${post.id}`)}
-                        >
-                          View Details
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-20 border rounded-lg">
-                  <p className="text-muted-foreground">No posts found matching your criteria.</p>
-                  <Button 
-                    variant="link" 
-                    onClick={() => {
-                      setSearchTerm("");
-                      setSearchQuery("");
-                      setSelectedCategory(null);
-                    }}
-                  >
-                    Clear all filters
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="featured" className="mt-6">
-              <div className="text-center py-20 border rounded-lg">
-                <Sparkles className="h-10 w-10 mx-auto opacity-50 mb-2" />
-                <p className="text-muted-foreground">Featured freelancers will appear here</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="top-rated" className="mt-6">
-              <div className="text-center py-20 border rounded-lg">
-                <Star className="h-10 w-10 mx-auto opacity-50 mb-2" />
-                <p className="text-muted-foreground">Top rated freelancers will appear here</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="new" className="mt-6">
-              <div className="text-center py-20 border rounded-lg">
-                <ArrowDownAZ className="h-10 w-10 mx-auto opacity-50 mb-2" />
-                <p className="text-muted-foreground">New freelancers will appear here</p>
-              </div>
-            </TabsContent>
-          </Tabs>
+        <HeroSection />
+        
+        <motion.div 
+          className="mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <MarketplaceSearchBar
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            categories={categories}
+            onSearch={handleSearch}
+          />
+        </motion.div>
+        
+        <div className="flex justify-between items-center mb-6">
+          <p className="text-sm text-muted-foreground">
+            Showing <strong>{posts.length}</strong> services
+            {searchQuery && <span> for "<strong>{searchQuery}</strong>"</span>}
+            {selectedCategory && <span> in <strong>{selectedCategory}</strong></span>}
+          </p>
         </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="featured" className="flex items-center">
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              Featured
+            </TabsTrigger>
+            <TabsTrigger value="top-rated" className="flex items-center">
+              <Star className="h-3.5 w-3.5 mr-1.5" />
+              Top Rated
+            </TabsTrigger>
+            <TabsTrigger value="new" className="flex items-center">
+              <ArrowDownAZ className="h-3.5 w-3.5 mr-1.5" />
+              Newest
+            </TabsTrigger>
+          </TabsList>
+          
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TabsContent value="all" className="mt-6">
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <PostCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : posts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {posts.map((post, i) => (
+                      <motion.div
+                        key={post.id}
+                        custom={i}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                      >
+                        <Card className="shadow-sm hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1 h-full flex flex-col">
+                          {post.cover_image_url && (
+                            <div className="w-full h-40 overflow-hidden">
+                              <img 
+                                src={post.cover_image_url}
+                                alt={post.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">{post.title}</CardTitle>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Avatar className="h-6 w-6 mr-2">
+                                <AvatarImage src={post.profiles?.avatar_url || ""} />
+                                <AvatarFallback>{getInitials(post.profiles?.display_name)}</AvatarFallback>
+                              </Avatar>
+                              <span>{post.profiles?.display_name || post.profiles?.username || "Freelancer"}</span>
+                              {post.review_count ? (
+                                <>
+                                  <span className="mx-2">•</span>
+                                  <div className="flex items-center">
+                                    {renderStars(post.average_rating)}
+                                    <span className="ml-1">({post.review_count})</span>
+                                  </div>
+                                </>
+                              ) : null}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pb-2 flex-grow">
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {post.content.replace(/[#*_~`]/g, '')}
+                            </p>
+                          </CardContent>
+                          <CardFooter className="flex justify-between pt-2">
+                            <span className="font-medium">${post.price.toFixed(2)}</span>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/marketplace/post/${post.id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-20 border rounded-lg">
+                    <p className="text-muted-foreground">No posts found matching your criteria.</p>
+                    <Button 
+                      variant="link" 
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSearchQuery("");
+                        setSelectedCategory(null);
+                      }}
+                    >
+                      Clear all filters
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="featured" className="mt-6">
+                <div className="text-center py-20 border rounded-lg">
+                  <Sparkles className="h-10 w-10 mx-auto opacity-50 mb-2" />
+                  <p className="text-muted-foreground">Featured freelancers will appear here</p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="top-rated" className="mt-6">
+                <div className="text-center py-20 border rounded-lg">
+                  <Star className="h-10 w-10 mx-auto opacity-50 mb-2" />
+                  <p className="text-muted-foreground">Top rated freelancers will appear here</p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="new" className="mt-6">
+                <div className="text-center py-20 border rounded-lg">
+                  <ArrowDownAZ className="h-10 w-10 mx-auto opacity-50 mb-2" />
+                  <p className="text-muted-foreground">New freelancers will appear here</p>
+                </div>
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
+        </Tabs>
       </div>
     </div>
   );

@@ -19,9 +19,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Section } from "@/components/freelancer/SectionEditor";
+import { Section } from "@/components/freelancer/types";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion } from "framer-motion";
 
 interface Post {
   id: string;
@@ -247,11 +248,12 @@ export default function PostDetails() {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(
-        <Star
-          key={i}
-          className={`h-6 w-6 ${i <= value ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-          onClick={() => onChange && onChange(i)}
-        />
+        <motion.div key={i} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}>
+          <Star
+            className={`h-6 w-6 ${i <= value ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+            onClick={() => onChange && onChange(i)}
+          />
+        </motion.div>
       );
     }
     return <div className="flex gap-1">{stars}</div>;
@@ -260,6 +262,18 @@ export default function PostDetails() {
   const getInitials = (name?: string) => {
     if (!name) return "U";
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+
+  const pageVariants = {
+    initial: { opacity: 0, y: 20 },
+    in: { opacity: 1, y: 0 },
+    out: { opacity: 0, y: -20 },
+  };
+
+  const pageTransition = {
+    type: "tween",
+    ease: "anticipate",
+    duration: 0.5,
   };
 
   if (loading) {
@@ -360,14 +374,26 @@ export default function PostDetails() {
   })() : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariants}
+      transition={pageTransition}
+      className="min-h-screen bg-background"
+    >
       <Navbar />
       <div className="container mx-auto px-4 py-20">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-12">
             
             {/* Left Column - Freelancer Profile */}
-            <div className="lg:col-span-1">
+            <motion.div 
+              className="lg:col-span-1"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <Card className="sticky top-24">
                 <CardHeader>
                   <div className="flex flex-col items-center text-center">
@@ -433,10 +459,15 @@ export default function PostDetails() {
                   </Button>
                 </CardFooter>
               </Card>
-            </div>
+            </motion.div>
 
             {/* Right Column - Post Details */}
-            <div className="lg:col-span-2 space-y-8">
+            <motion.div 
+              className="lg:col-span-2 space-y-8"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
               <Link to="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 <span>Back to Marketplace</span>
@@ -453,13 +484,16 @@ export default function PostDetails() {
               )}
 
               {post.cover_image_url && (
-                <div className="rounded-lg overflow-hidden">
+                <motion.div 
+                  className="rounded-lg overflow-hidden"
+                  whileHover={{ scale: 1.02 }}
+                >
                   <img 
                     src={post.cover_image_url} 
                     alt={post.title} 
                     className="w-full h-auto object-cover" 
                   />
-                </div>
+                </motion.div>
               )}
               
               <Card>
@@ -493,7 +527,11 @@ export default function PostDetails() {
                         const pkg = packages[tier];
                         if (!pkg) return null;
                         return (
-                          <div key={tier} className="border rounded-lg p-4 flex flex-col">
+                          <motion.div 
+                            key={tier} 
+                            className="border rounded-lg p-4 flex flex-col"
+                            whileHover={{ y: -5, boxShadow: "0px 10px 20px rgba(0,0,0,0.1)" }}
+                          >
                             <h4 className="text-lg font-semibold capitalize mb-2 text-primary">{pkg.title || tier}</h4>
                             {pkg.description && <p className="text-sm text-muted-foreground mb-4 flex-1">{pkg.description}</p>}
                             {pkg.deliveryTime && (
@@ -503,7 +541,7 @@ export default function PostDetails() {
                             <a href="https://discord.gg/2VHTdT7mrJ" target="_blank" rel="noopener noreferrer" className="w-full">
                               <Button variant="secondary" className="w-full">Join Discord to Purchase</Button>
                             </a>
-                          </div>
+                          </motion.div>
                         );
                       })}
                     </div>
@@ -523,7 +561,13 @@ export default function PostDetails() {
                   {reviews.length > 0 ? (
                     <div className="space-y-6">
                       {reviews.map((review) => (
-                        <div key={review.id} className="pb-6 border-b last:border-b-0">
+                        <motion.div 
+                          key={review.id} 
+                          className="pb-6 border-b last:border-b-0"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                        >
                           <div className="flex justify-between mb-2">
                             <div className="flex items-center">
                               <Avatar className="h-8 w-8 mr-2">
@@ -539,7 +583,7 @@ export default function PostDetails() {
                           {review.comment && (
                             <p className="text-muted-foreground mt-2">{review.comment}</p>
                           )}
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   ) : (
@@ -595,10 +639,10 @@ export default function PostDetails() {
                   )}
                 </CardFooter>
               </Card>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
