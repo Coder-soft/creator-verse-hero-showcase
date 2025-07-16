@@ -1,9 +1,25 @@
+import { Navbar } from "@/components/ui/navbar";
+import { HeroSection } from "@/components/ui/hero-section";
+import { TrendingFreelancers } from "@/components/ui/TrendingFreelancers";
+import { OurPartners } from "@/components/ui/OurPartners";
+import { AnimatedSection } from "@/components/ui/AnimatedSection";
+import '../spotlight.css';
+
 const Index = () => {
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p>Welcome to your dashboard.</p>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-grow">
+        <HeroSection />
+        <AnimatedSection delay={0.2}>
+          <TrendingFreelancers />
+        </AnimatedSection>
+        <AnimatedSection delay={0.4}>
+          <OurPartners />
+        </AnimatedSection>
+      </main>
     </div>
   );
 };
+
 export default Index;
