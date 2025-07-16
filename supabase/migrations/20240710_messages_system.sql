@@ -122,7 +122,10 @@ EXECUTE PROCEDURE update_conversation_timestamp();
 
 -- Create function to mark messages as read
 CREATE OR REPLACE FUNCTION mark_messages_as_read(p_conversation_id UUID, p_user_id UUID)
-RETURNS void AS $$
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $
 BEGIN
   UPDATE messages
   SET read = TRUE
@@ -130,4 +133,4 @@ BEGIN
     AND sender_id != p_user_id
     AND read = FALSE;
 END;
-$$ LANGUAGE plpgsql; 
+$; 
