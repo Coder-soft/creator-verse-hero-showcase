@@ -89,7 +89,7 @@ export default function PostDetails() {
       if (postError) throw postError;
       if (!postData) throw new Error("Post not found");
       
-      // Load profile separately
+      // Load freelancer profile separately
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("username, display_name, avatar_url")
@@ -110,16 +110,36 @@ export default function PostDetails() {
       // Load reviews
       const { data: reviewsData, error: reviewsError } = await supabase
         .from("freelancer_post_reviews")
-        .select("*, profiles(username, display_name, avatar_url)")
+        .select("*")
         .eq("post_id", postId)
         .order("created_at", { ascending: false });
       
       if (reviewsError) throw reviewsError;
-      setReviews(reviewsData || []);
+
+      let reviewsWithProfiles: Review[] = [];
+      if (reviewsData && reviewsData.length > 0) {
+        const reviewUserIds = [...new Set(reviewsData.map(r => r.user_id))];
+        const { data: reviewProfilesData, error: reviewProfilesError } = await supabase
+          .from('profiles')
+          .select('user_id, username, display_name, avatar_url')
+          .in('user_id', reviewUserIds);
+
+        if (reviewProfilesError) {
+          console.warn("Could not fetch reviewer profiles:", reviewProfilesError);
+        }
+
+        const reviewProfilesMap = new Map(reviewProfilesData?.map(p => [p.user_id, p]));
+        reviewsWithProfiles = reviewsData.map(review => ({
+          ...review,
+          profiles: reviewProfilesMap.get(review.user_id)
+        }));
+      }
+      
+      setReviews(reviewsWithProfiles);
       
       // Check if user has already reviewed
       if (user) {
-        const userReviewData = reviewsData?.find(r => r.user_id === user.id) || null;
+        const userReviewData = reviewsWithProfiles.find(r => r.user_id === user.id) || null;
         setUserReview(userReviewData);
         
         if (userReviewData) {
