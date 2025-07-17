@@ -293,9 +293,9 @@ export default function AdminPage() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="applications" className="w-full">
-            <TabsList className="grid grid-cols-3 mb-8"><TabsTrigger value="applications">Freelancer Applications</TabsTrigger><TabsTrigger value="users">Users Management</TabsTrigger><TabsTrigger value="questions">Application Questions</TabsTrigger></TabsList>
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-8"><TabsTrigger value="applications">Freelancer Applications</TabsTrigger><TabsTrigger value="users">Users Management</TabsTrigger><TabsTrigger value="questions">Application Questions</TabsTrigger></TabsList>
             <TabsContent value="applications">
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Submitted</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                   <TableBody>
@@ -308,11 +308,11 @@ export default function AdminPage() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Dialog open={isReviewDialogOpen && selectedApplication?.id === application.id} onOpenChange={(open) => { if (!open) setSelectedApplication(null); setIsReviewDialogOpen(open); }}>
-                              <DialogTrigger asChild><Button variant="outline" size="icon" onClick={() => { setSelectedApplication(application); setIsReviewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button></DialogTrigger>
-                              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                              <DialogTrigger asChild><Button variant="outline" size="icon" className="p-2" onClick={() => { setSelectedApplication(application); setIsReviewDialogOpen(true); }}><Eye className="h-4 w-4" /></Button></DialogTrigger>
+                              <DialogContent className="max-w-3xl w-full sm:w-auto max-h-[80vh] sm:max-h-full overflow-y-auto">
                                 <DialogHeader><DialogTitle>Application Details</DialogTitle><DialogDescription>Review the freelancer application</DialogDescription></DialogHeader>
                                 {selectedApplication && <div className="space-y-6 py-4">
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div><h3 className="text-sm font-semibold">Applicant</h3><p>{selectedApplication.user.profile.display_name || 'N/A'}</p></div>
                                     <div><h3 className="text-sm font-semibold">Email</h3><p>{selectedApplication.user.email}</p></div>
                                     <div><h3 className="text-sm font-semibold">Submitted</h3><p>{new Date(selectedApplication.submitted_at).toLocaleString()}</p></div>
@@ -354,8 +354,8 @@ export default function AdminPage() {
                               </DialogContent>
                             </Dialog>
                             {application.status === 'pending' && <>
-                              <Button variant="destructive" size="icon" onClick={() => handleApplicationAction(application.id, 'rejected', application.user.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}</Button>
-                              <Button variant="default" size="icon" onClick={() => handleApplicationAction(application.id, 'approved', application.user.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}</Button>
+                              <Button variant="destructive" size="icon" className="p-2" onClick={() => handleApplicationAction(application.id, 'rejected', application.user.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}</Button>
+<Button variant="default" size="icon" className="p-2" onClick={() => handleApplicationAction(application.id, 'approved', application.user.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}</Button>
                             </>}
                           </div>
                         </TableCell>
@@ -369,13 +369,13 @@ export default function AdminPage() {
               <Tabs defaultValue="freelancers">
                 <TabsList><TabsTrigger value="freelancers">Freelancers</TabsTrigger><TabsTrigger value="buyers">Buyers</TabsTrigger></TabsList>
                 <TabsContent value="freelancers" className="mt-4">
-                  <div className="rounded-md border"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
-                    {freelancers.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">No freelancers found</TableCell></TableRow> : freelancers.map((freelancer) => <TableRow key={freelancer.id}><TableCell className="font-medium">{freelancer.profile.display_name || freelancer.profile.username || 'N/A'}</TableCell><TableCell>{freelancer.email}</TableCell><TableCell>{renderUserStatus(freelancer.profile.account_status)}</TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Dialog><DialogTrigger asChild><Button variant="outline" size="icon"><UserCog className="h-4 w-4" /></Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update User Status</DialogTitle></DialogHeader><div className="py-4 space-y-4"><Button variant="default" className="w-full" disabled={freelancer.profile.account_status === 'active' || processing} onClick={() => handleUserStatusChange(freelancer.id, 'active')}>Set as Active</Button><Button variant="secondary" className="w-full" disabled={freelancer.profile.account_status === 'suspended' || processing} onClick={() => handleUserStatusChange(freelancer.id, 'suspended')}>Suspend Account</Button></div></DialogContent></Dialog></div></TableCell></TableRow>)}
+                  <div className="rounded-md border overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
+                    {freelancers.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">No freelancers found</TableCell></TableRow> : freelancers.map((freelancer) => <TableRow key={freelancer.id}><TableCell className="font-medium">{freelancer.profile.display_name || freelancer.profile.username || 'N/A'}</TableCell><TableCell>{freelancer.email}</TableCell><TableCell>{renderUserStatus(freelancer.profile.account_status)}</TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Dialog><DialogTrigger asChild><Button variant="outline" size="icon" className="p-2"><UserCog className="h-4 w-4" /></Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update User Status</DialogTitle></DialogHeader><div className="py-4 space-y-4"><Button variant="default" className="w-full" disabled={freelancer.profile.account_status === 'active' || processing} onClick={() => handleUserStatusChange(freelancer.id, 'active')}>Set as Active</Button><Button variant="secondary" className="w-full" disabled={freelancer.profile.account_status === 'suspended' || processing} onClick={() => handleUserStatusChange(freelancer.id, 'suspended')}>Suspend Account</Button></div></DialogContent></Dialog></div></TableCell></TableRow>)}
                   </TableBody></Table></div>
                 </TabsContent>
                 <TabsContent value="buyers" className="mt-4">
-                  <div className="rounded-md border"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
-                    {buyers.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">No buyers found</TableCell></TableRow> : buyers.map((buyer) => <TableRow key={buyer.id}><TableCell className="font-medium">{buyer.profile.display_name || buyer.profile.username || 'N/A'}</TableCell><TableCell>{buyer.email}</TableCell><TableCell>{renderUserStatus(buyer.profile.account_status)}</TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Dialog><DialogTrigger asChild><Button variant="outline" size="icon"><UserCog className="h-4 w-4" /></Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update User Status</DialogTitle></DialogHeader><div className="py-4 space-y-4"><Button variant="default" className="w-full" disabled={buyer.profile.account_status === 'active' || processing} onClick={() => handleUserStatusChange(buyer.id, 'active')}>Set as Active</Button><Button variant="secondary" className="w-full" disabled={buyer.profile.account_status === 'suspended' || processing} onClick={() => handleUserStatusChange(buyer.id, 'suspended')}>Suspend Account</Button></div></DialogContent></Dialog></div></TableCell></TableRow>)}
+                  <div className="rounded-md border overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
+                    {buyers.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">No buyers found</TableCell></TableRow> : buyers.map((buyer) => <TableRow key={buyer.id}><TableCell className="font-medium">{buyer.profile.display_name || buyer.profile.username || 'N/A'}</TableCell><TableCell>{buyer.email}</TableCell><TableCell>{renderUserStatus(buyer.profile.account_status)}</TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Dialog><DialogTrigger asChild><Button variant="outline" size="icon" className="p-2"><UserCog className="h-4 w-4" /></Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update User Status</DialogTitle></DialogHeader><div className="py-4 space-y-4"><Button variant="default" className="w-full" disabled={buyer.profile.account_status === 'active' || processing} onClick={() => handleUserStatusChange(buyer.id, 'active')}>Set as Active</Button><Button variant="secondary" className="w-full" disabled={buyer.profile.account_status === 'suspended' || processing} onClick={() => handleUserStatusChange(buyer.id, 'suspended')}>Suspend Account</Button></div></DialogContent></Dialog></div></TableCell></TableRow>)}
                   </TableBody></Table></div>
                 </TabsContent>
               </Tabs>
@@ -390,11 +390,11 @@ export default function AdminPage() {
                   <Button onClick={handleCreateQuestion} disabled={!newQuestion.question.trim() || processing}>{processing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : 'Add Question'}</Button>
                 </CardContent>
               </Card>
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table><TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Question</TableHead><TableHead>Type</TableHead><TableHead>Required</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
                   {questions.length === 0 ? <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No questions found</TableCell></TableRow> : questions.map((question, index) => <TableRow key={question.id}><TableCell>{index + 1}</TableCell><TableCell className="font-medium">{question.question}</TableCell><TableCell><Badge variant="outline">{question.type}</Badge></TableCell><TableCell>{question.required ? 'Yes' : 'No'}</TableCell><TableCell className="text-right"><div className="flex justify-end gap-2">
                     <Dialog open={isQuestionDialogOpen && selectedQuestion?.id === question.id} onOpenChange={(open) => { if (!open) setSelectedQuestion(null); setIsQuestionDialogOpen(open); }}>
-                      <DialogTrigger asChild><Button variant="outline" size="icon" onClick={() => { setSelectedQuestion(question); setIsQuestionDialogOpen(true); }}><PencilLine className="h-4 w-4" /></Button></DialogTrigger>
+                      <DialogTrigger asChild><Button variant="outline" size="icon" className="p-2" onClick={() => { setSelectedQuestion(question); setIsQuestionDialogOpen(true); }}><PencilLine className="h-4 w-4" /></Button></DialogTrigger>
                       <DialogContent>
                         <DialogHeader><DialogTitle>Edit Question</DialogTitle></DialogHeader>
                         {selectedQuestion && <div className="py-4 space-y-4">
@@ -408,7 +408,7 @@ export default function AdminPage() {
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
-                    <Button variant="destructive" size="icon" onClick={() => handleDeleteQuestion(question.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</Button>
+                    <Button variant="destructive" size="icon" className="p-2" onClick={() => handleDeleteQuestion(question.id)} disabled={processing}>{processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</Button>
                   </div></TableCell></TableRow>)}
                 </TableBody></Table>
               </div>

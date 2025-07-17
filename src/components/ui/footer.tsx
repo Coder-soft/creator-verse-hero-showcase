@@ -26,7 +26,7 @@ export default function Footer() {
               </Link>
             </div>
             <p className="text-sm text-muted-foreground">
-              © {currentYear} All rights reserved.
+              © 2025 Creators Market All rights reserved.
             </p>
           </div>
 

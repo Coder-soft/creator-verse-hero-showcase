@@ -482,19 +482,6 @@ export default function PostDetails() {
                 </div>
               )}
 
-              {post.cover_image_url && (
-                <motion.div 
-                  className="rounded-lg overflow-hidden"
-                  whileHover={{ scale: 1.02 }}
-                >
-                  <img 
-                    src={post.cover_image_url} 
-                    alt={post.title} 
-                    className="w-full h-auto object-cover" 
-                  />
-                </motion.div>
-              )}
-              
               <Card>
                 <CardHeader>
                   <CardTitle>Description</CardTitle>

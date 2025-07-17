@@ -28,26 +28,35 @@ export function MarketplaceSearchBar({
     <div className="bg-card p-4 rounded-lg shadow-lg border border-border/50 w-full">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
         {/* Search Input */}
-        <div className="relative md:col-span-5">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <div className="relative md:col-span-7">
           <Input
             type="text"
             placeholder="What service are you looking for?"
-            className="w-full rounded-md pl-10 pr-10 py-3 text-base"
+            className="w-full rounded-full pl-4 pr-12 py-3 text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onSearch()}
           />
-          {searchTerm && (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setSearchTerm("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
-              onClick={() => setSearchTerm("")}
+              className="h-8 w-8 rounded-full bg-amber-400 hover:bg-amber-500 text-white"
+              onClick={onSearch}
             >
-              <X className="h-4 w-4" />
+              <Search className="h-4 w-4" />
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Category Select */}
@@ -84,13 +93,6 @@ export function MarketplaceSearchBar({
               <SelectItem value="price-high">Price: High to Low</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        {/* Search Button */}
-        <div className="md:col-span-2">
-          <Button size="lg" className="w-full text-base" onClick={onSearch}>
-            Search
-          </Button>
         </div>
       </div>
     </div>
